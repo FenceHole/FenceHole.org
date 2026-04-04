@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fence Hole LLC — One Voice, Many Doors</title>
+  <meta name="description" content="Fence Hole LLC is a digital media conglomerate and creative ecosystem. Every property we build is designed to feed the others, creating a strong, interconnected brand network." />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="Fence Hole LLC — One Voice, Many Doors" />
+  <meta property="og:description" content="A digital media conglomerate and creative ecosystem. From commerce and storytelling to non-profit healthcare and creator tools — this is the Fence Hole universe." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://fencehole.org" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ====================================================
+       NAVIGATION
+       ==================================================== -->
+  <header>
+    <nav class="nav" id="main-nav" aria-label="Main navigation">
+      <a href="#" class="nav-logo" aria-label="Fence Hole LLC home">
+        <span class="nav-logo-icon" aria-hidden="true">🕳</span>
+        <span class="nav-logo-text">Fence<span>Hole</span> LLC</span>
+      </a>
+
+      <ul class="nav-links" id="nav-links" role="list">
+        <li><a href="#our-story">Our Story</a></li>
+        <li><a href="#ecosystem">Ecosystem</a></li>
+        <li><a href="#content-factory">How We Work</a></li>
+        <li><a href="#ecosystem" class="nav-cta">Explore Properties</a></li>
+      </ul>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-links">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ====================================================
+       HERO SECTION — "One Voice, Many Doors"
+       ==================================================== -->
+  <section class="hero" id="hero" aria-labelledby="hero-headline">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-bg-grid"></div>
+      <div class="hero-bg-glow"></div>
+    </div>
+
+    <div class="container">
+      <div class="hero-content">
+
+        <!-- Left: Copy -->
+        <div class="hero-copy">
+          <div class="hero-eyebrow">
+            <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+            Fence Hole LLC — The Mothership
+          </div>
+
+          <h1 class="hero-headline" id="hero-headline">
+            One Voice,<br />
+            <em>Many Doors.</em>
+          </h1>
+
+          <p class="hero-body">
+            We are a digital media conglomerate and creative ecosystem. Every property
+            we build is designed to feed the others, creating a strong, interconnected
+            brand network that meets different audience needs. From commerce and
+            storytelling to non-profit healthcare and creator tools — this is the
+            <strong class="gold">Fence Hole universe.</strong>
+          </p>
+
+          <div class="hero-actions">
+            <a href="#ecosystem" class="btn btn-primary">
+              <span>Explore Our Properties</span>
+              <span class="btn-icon" aria-hidden="true">→</span>
+            </a>
+            <a href="#our-story" class="btn btn-outline">
+              <span>Our Origin Story</span>
+            </a>
+          </div>
+
+          <div class="hero-stats" role="list" aria-label="Key metrics">
+            <div role="listitem">
+              <div class="hero-stat-value">
+                <span data-count="44" data-suffix="M+">44M+</span>
+              </div>
+              <div class="hero-stat-label">Single Post Views</div>
+            </div>
+            <div role="listitem">
+              <div class="hero-stat-value">
+                <span data-count="4" data-suffix="×">4×</span>
+              </div>
+              <div class="hero-stat-label">Newsweek Features</div>
+            </div>
+            <div role="listitem">
+              <div class="hero-stat-value">
+                <span data-count="6">6</span>
+              </div>
+              <div class="hero-stat-label">Brand Properties</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Hub & Spoke Diagram -->
+        <div class="hero-hub" role="img" aria-label="Hub and spoke diagram showing Fence Hole LLC at the center connecting all six properties">
+          <svg class="hub-svg" id="hub-svg" aria-hidden="true" overflow="visible"></svg>
+
+          <!-- Center hub -->
+          <div class="hub-center" id="hub-center" aria-hidden="true">
+            <span class="hub-center-logo">🕳</span>
+            <span class="hub-center-label">Fence<br>Hole LLC</span>
+          </div>
+
+          <!-- Spoke 1: Frances & Family — top -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #e05c7c; top: 0%; left: 50%; transform: translate(-50%, 0%);">
+            <span class="hub-spoke-icon">🐱</span>
+            <span class="hub-spoke-name">Frances &amp; Family</span>
+          </div>
+
+          <!-- Spoke 2: Cool Cat Stuff — top-right -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #4db8f0; top: 18%; right: 0%; transform: translate(0%, 0%);">
+            <span class="hub-spoke-icon">🛒</span>
+            <span class="hub-spoke-name">Cool Cat Stuff</span>
+          </div>
+
+          <!-- Spoke 3: The Good Meow — bottom-right -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #9d7af5; bottom: 18%; right: 0%; transform: translate(0%, 0%);">
+            <span class="hub-spoke-icon">📰</span>
+            <span class="hub-spoke-name">The Good Meow</span>
+          </div>
+
+          <!-- Spoke 4: Vet Van Fleet — bottom -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #4ecba0; bottom: 0%; left: 50%; transform: translate(-50%, 0%);">
+            <span class="hub-spoke-icon">🏥</span>
+            <span class="hub-spoke-name">Vet Van Fleet</span>
+          </div>
+
+          <!-- Spoke 5: Vibecode Cat — bottom-left -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #f57a4e; bottom: 18%; left: 0%; transform: translate(0%, 0%);">
+            <span class="hub-spoke-icon">⚡</span>
+            <span class="hub-spoke-name">Vibecode Cat</span>
+          </div>
+
+          <!-- Spoke 6: User Generated Cats — top-left -->
+          <div class="hub-spoke" aria-hidden="true"
+               style="--spoke-color: #f5c842; top: 18%; left: 0%; transform: translate(0%, 0%);">
+            <span class="hub-spoke-icon">🎥</span>
+            <span class="hub-spoke-name">UGC Agency</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       ORIGIN STORY — "How a Hole in a Fence Built an Empire"
+       ==================================================== -->
+  <section class="section origin" id="our-story" aria-labelledby="origin-title">
+    <div class="container">
+
+      <div class="origin-layout">
+
+        <!-- Timeline -->
+        <div>
+          <div class="section-label">Our Origin Story</div>
+          <h2 class="section-title" id="origin-title">
+            How a Hole in a<br />
+            <span class="gold">Fence Built an Empire</span>
+          </h2>
+
+          <div class="origin-timeline" role="list" aria-label="Origin story timeline">
+
+            <div class="timeline-item reveal" role="listitem">
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div class="timeline-chapter">Chapter 1</div>
+              <h3 class="timeline-heading">The Hole in the Fence</h3>
+              <p class="timeline-text">
+                It all started with an actual hole in a wooden fence. A terrified, feral
+                stray cat named Frances popped her head through that hole looking for
+                food. That single moment of curiosity changed everything.
+              </p>
+            </div>
+
+            <div class="timeline-item reveal" role="listitem" style="transition-delay: 0.1s;">
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div class="timeline-chapter">Chapter 2</div>
+              <h3 class="timeline-heading">Four Months of Trust</h3>
+              <p class="timeline-text">
+                Our founder, Chris, spent four months earning Frances's trust—one meal at
+                a time. Then one day she showed up injured, leading Chris to bring her
+                inside. An act of radical patience that would ripple out to hundreds
+                of thousands of people.
+              </p>
+            </div>
+
+            <div class="timeline-item reveal" role="listitem" style="transition-delay: 0.2s;">
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div class="timeline-chapter">Chapter 3</div>
+              <h3 class="timeline-heading">Half a Million Witnesses</h3>
+              <p class="timeline-text">
+                Frances gave birth to kittens in Chris's basement while half a million
+                people watched the live stream. A raw, unscripted, deeply human moment
+                that the internet couldn't look away from. Chris kept the entire bonded
+                family.
+              </p>
+            </div>
+
+            <div class="timeline-item reveal" role="listitem" style="transition-delay: 0.3s;">
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div class="timeline-chapter">Chapter 4 — Today</div>
+              <h3 class="timeline-heading">A Viral Sensation Turned Empire</h3>
+              <p class="timeline-text">
+                That organic, mental-health-saving journey exploded into a viral sensation
+                that caught the attention of global media. That single act of kindness
+                built the foundation for the Fence Hole LLC media empire—and we're
+                just getting started.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sidebar Stats & Press -->
+        <div class="origin-sidebar">
+
+          <div class="origin-card reveal">
+            <div class="origin-card-headline">
+              <span data-count="500000" data-suffix="">500,000</span>
+            </div>
+            <div class="origin-card-label">Live viewers watched Frances give birth in Chris's basement</div>
+          </div>
+
+          <div class="origin-card reveal" style="transition-delay: 0.1s;">
+            <div class="origin-card-headline">
+              <span data-count="44" data-suffix="M">44M</span>
+            </div>
+            <div class="origin-card-label">Views on a single post — organic, earned reach</div>
+          </div>
+
+          <div class="press-logos reveal" style="transition-delay: 0.2s;">
+            <p class="press-title">As Seen In</p>
+            <ul class="press-list" role="list">
+              <li class="press-item">Newsweek — 4 features in one year</li>
+              <li class="press-item">China Daily — Front page coverage</li>
+              <li class="press-item">Hundreds of thousands of followers worldwide</li>
+              <li class="press-item">Amazon Live — #1 A-List cat channel</li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       ECOSYSTEM — Our Branches
+       ==================================================== -->
+  <section class="section ecosystem" id="ecosystem" aria-labelledby="ecosystem-title">
+    <div class="container">
+
+      <div class="section-label">The Fence Hole Ecosystem</div>
+      <h2 class="section-title" id="ecosystem-title">
+        Six Powerhouse<br />
+        <span class="gold">Divisions, One Vision</span>
+      </h2>
+      <p class="section-intro">
+        Each property in the Fence Hole universe is built to feed the others. Every
+        click, every follower, every purchase flows back into the network — amplifying
+        the whole.
+      </p>
+
+      <div class="branches-grid" role="list" aria-label="Fence Hole LLC brand properties">
+
+        <!-- Frances & Family -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #e05c7c;">
+          <span class="branch-badge">The Heart</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">🐱</div>
+            <div class="branch-meta">
+              <div class="branch-name">Frances and Family</div>
+              <div class="branch-role">Authentic Storytelling &amp; Lifestyle</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            The heart of our brand and the origin of everything. Think of it as
+            a real-life "Truman Show" following the lives of Frances and her
+            family. This organic powerhouse has generated massive viral reach,
+            including single posts with over 44 million views.
+          </p>
+          <a href="https://francesandfamily.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit Frances and Family website">
+            francesandfamily.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- Cool Cat Stuff -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #4db8f0; transition-delay: 0.07s;">
+          <span class="branch-badge">Commerce Engine</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">🛒</div>
+            <div class="branch-meta">
+              <div class="branch-name">Cool Cat Stuff</div>
+              <div class="branch-role">Commerce &amp; Reviews</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            Our commerce and review engine. The #1 ranked and <em>only</em> dedicated
+            cat product channel with an A-List ranking on Amazon Live. We drive daily
+            traffic through live unboxings, reviews, and affiliate partnerships.
+          </p>
+          <a href="https://coolcatstuff.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit Cool Cat Stuff website">
+            coolcatstuff.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- The Good Meow -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #9d7af5; transition-delay: 0.14s;">
+          <span class="branch-badge">The Voice</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">📰</div>
+            <div class="branch-meta">
+              <div class="branch-name">The Good Meow</div>
+              <div class="branch-role">Editorial &amp; Satire Platform</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            The satirical news blog covering what's going on in the world of
+            "stupid humans," brought to you by the cats that own them. Our
+            editorial and satire platform with a unique feline perspective on
+            everything happening around us.
+          </p>
+          <a href="https://thegoodmeow.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit The Good Meow website">
+            thegoodmeow.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- Vet Van Fleet -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #4ecba0; transition-delay: 0.21s;">
+          <span class="branch-badge">The Mission</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">🏥</div>
+            <div class="branch-meta">
+              <div class="branch-name">Vet Van Fleet</div>
+              <div class="branch-role">Non-Profit Healthcare</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            The nonprofit anchor of our business. We are on a mission to bring
+            free, decentralized healthcare to cats everywhere via mobile units.
+            We fund this by reverse-engineering the billionaire's playbook —
+            the money comes from organizations, not the people.
+          </p>
+          <a href="https://vetvanfleet.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit Vet Van Fleet website">
+            vetvanfleet.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- Vibecode Cat -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #f57a4e; transition-delay: 0.28s;">
+          <span class="branch-badge">Agency Services</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">⚡</div>
+            <div class="branch-meta">
+              <div class="branch-name">Vibecode Cat</div>
+              <div class="branch-role">Services &amp; Marketing</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            The services and marketing branch. We vibecode websites and mobile
+            apps, helping brands, businesses, and influencers establish who they
+            are and excel in the digital space in a remarkably cool way.
+          </p>
+          <a href="https://vibecodecat.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit Vibecode Cat website">
+            vibecodecat.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- User Generated Cats -->
+        <article class="branch-card reveal" role="listitem"
+                 style="--branch-color: #f5c842; transition-delay: 0.35s;">
+          <span class="branch-badge">Creator Hub</span>
+          <div class="branch-header">
+            <div class="branch-icon" aria-hidden="true">🎥</div>
+            <div class="branch-meta">
+              <div class="branch-name">User Generated Cats</div>
+              <div class="branch-role">World's First Cats-Only Agency</div>
+            </div>
+          </div>
+          <p class="branch-desc">
+            The world's first cats-only creator agency. We rep cat influencers,
+            partner with cat brands, and remove traditional industry barriers.
+            Free tools, education, media kit generators, and industry-standard
+            rate calculators for new cat content creators to learn and grow.
+          </p>
+          <a href="https://usergeneratedcats.com" class="branch-url" target="_blank" rel="noopener noreferrer" aria-label="Visit User Generated Cats website">
+            usergeneratedcats.com
+            <span class="branch-url-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       CONTENT FACTORY — How We Operate
+       ==================================================== -->
+  <section class="section factory" id="content-factory" aria-labelledby="factory-title">
+    <div class="container">
+
+      <div class="section-label">How We Operate</div>
+      <h2 class="section-title" id="factory-title">
+        The <span class="gold">Content Factory</span>
+      </h2>
+      <p class="section-intro">
+        We operate on a lightweight, repeatable Content Factory model built for
+        maximum reach. Three steps. Infinite scale.
+      </p>
+
+      <div class="factory-grid" role="list" aria-label="Content factory steps">
+
+        <!-- Step 1: Capture -->
+        <div class="factory-step" role="listitem">
+          <div class="factory-step-number" aria-hidden="true">01</div>
+          <span class="factory-step-icon" aria-hidden="true">📡</span>
+          <div class="factory-step-phase">Step One — Capture</div>
+          <h3 class="factory-step-title">The Source</h3>
+          <p class="factory-step-desc">
+            Everything starts with our daily live shows and authentic
+            behind-the-scenes moments. No scripts. No sets. Just real life with
+            the Fence Hole family — and the audience is always invited.
+          </p>
+        </div>
+
+        <!-- Step 2: Repurpose -->
+        <div class="factory-step" role="listitem">
+          <div class="factory-step-number" aria-hidden="true">02</div>
+          <span class="factory-step-icon" aria-hidden="true">⚙️</span>
+          <div class="factory-step-phase">Step Two — Repurpose</div>
+          <h3 class="factory-step-title">The Factory</h3>
+          <p class="factory-step-desc">
+            We cut live content into highly optimized, short-form vertical reels
+            utilizing a massive template library. One live session becomes dozens
+            of platform-native pieces — each tuned for its audience.
+          </p>
+        </div>
+
+        <!-- Step 3: Distribute -->
+        <div class="factory-step" role="listitem">
+          <div class="factory-step-number" aria-hidden="true">03</div>
+          <span class="factory-step-icon" aria-hidden="true">🚀</span>
+          <div class="factory-step-phase">Step Three — Distribute</div>
+          <h3 class="factory-step-title">The Reach</h3>
+          <p class="factory-step-desc">
+            Content is systematically cross-posted across all major platforms,
+            funneling massive traffic back to our central hubs.
+          </p>
+          <div class="factory-platforms" aria-label="Distribution platforms">
+            <span class="factory-platform-tag">TikTok</span>
+            <span class="factory-platform-tag">Instagram</span>
+            <span class="factory-platform-tag">YouTube</span>
+            <span class="factory-platform-tag">Threads</span>
+            <span class="factory-platform-tag">X</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ====================================================
+       FOOTER
+       ==================================================== -->
+  <footer class="footer" aria-label="Site footer">
+    <div class="container">
+
+      <div class="footer-top">
+
+        <div class="footer-brand">
+          <div class="footer-brand-name">
+            Fence<span class="gold">Hole</span> LLC
+          </div>
+          <p class="footer-brand-desc">
+            A digital media conglomerate and creative ecosystem built on one
+            authentic act of kindness — and a hole in a fence. The Mothership
+            for six powerhouse properties connecting millions of cat lovers
+            around the world.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Our Properties</div>
+          <ul class="footer-links" role="list">
+            <li><a href="https://francesandfamily.com" target="_blank" rel="noopener noreferrer">Frances and Family</a></li>
+            <li><a href="https://coolcatstuff.com"     target="_blank" rel="noopener noreferrer">Cool Cat Stuff</a></li>
+            <li><a href="https://thegoodmeow.com"      target="_blank" rel="noopener noreferrer">The Good Meow</a></li>
+            <li><a href="https://vetvanfleet.com"       target="_blank" rel="noopener noreferrer">Vet Van Fleet</a></li>
+            <li><a href="https://vibecodecat.com"       target="_blank" rel="noopener noreferrer">Vibecode Cat</a></li>
+            <li><a href="https://usergeneratedcats.com" target="_blank" rel="noopener noreferrer">User Generated Cats</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Navigate</div>
+          <ul class="footer-links" role="list">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#our-story">Our Story</a></li>
+            <li><a href="#ecosystem">Ecosystem</a></li>
+            <li><a href="#content-factory">How We Work</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">
+          &copy; <span id="footer-year">2025</span> Fence Hole LLC. All rights reserved.
+        </p>
+        <p class="footer-tagline">It all started with a hole in a fence. 🕳</p>
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
