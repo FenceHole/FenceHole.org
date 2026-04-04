@@ -51,7 +51,7 @@
   }
 
   /* ---- Intersection Observer for reveal animations ---- */
-  var revealObserver = new IntersectionObserver(
+  const revealObserver = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
@@ -161,7 +161,7 @@
     requestAnimationFrame(step);
   }
 
-  var counterObserver = new IntersectionObserver(
+  const counterObserver = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
