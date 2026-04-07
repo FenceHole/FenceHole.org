@@ -1,303 +1,154 @@
-/* =========================================================
-   FENCE HOLE LLC — fencehole.org
-   script.js: Nav scroll, hub canvas, scroll animations
-   ========================================================= */
-
-(function () {
+(function(){
   'use strict';
 
-  /* ── Nav scroll state ── */
+  // Nav scroll
   const nav = document.getElementById('nav');
-  function updateNav() {
-    if (window.scrollY > 40) {
-      nav.classList.add('is-scrolled');
-    } else {
-      nav.classList.remove('is-scrolled');
-    }
-  }
-  window.addEventListener('scroll', updateNav, { passive: true });
-  updateNav();
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, {passive:true});
 
-  /* ── Hub-and-spoke canvas animation ── */
-  const canvas = document.getElementById('hubCanvas');
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-
-    const GOLD = 'rgba(240,180,41,';
-    const BLUE = 'rgba(59,158,255,';
-
-    // Spoke labels
-    const SPOKES = [
-      { label: 'Frances & Family',    color: GOLD },
-      { label: 'Cool Cat Stuff',      color: BLUE },
-      { label: 'The Good Meow',       color: 'rgba(52,211,153,' },
-      { label: 'Vet Van Fleet',       color: 'rgba(34,211,238,' },
-      { label: 'Vibecode Cat',        color: 'rgba(167,139,250,' },
-      { label: 'User Generated Cats', color: 'rgba(251,113,133,' },
-    ];
-
-    let W, H, cx, cy, orbitR, spokeR;
-    let nodes = [];
-    let particles = [];
-    let animFrameId;
-    let t = 0;
-
-    function resize() {
-      W = canvas.offsetWidth;
-      H = canvas.offsetHeight;
-      canvas.width  = W * window.devicePixelRatio;
-      canvas.height = H * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      cx = W * 0.62;
-      cy = H * 0.5;
-      orbitR = Math.min(W, H) * 0.32;
-      spokeR  = 8;
-      buildNodes();
-    }
-
-    function buildNodes() {
-      nodes = SPOKES.map((s, i) => {
-        const angle = (i / SPOKES.length) * Math.PI * 2 - Math.PI / 2;
-        return {
-          angle,
-          baseAngle: angle,
-          color:  s.color,
-          label:  s.label,
-          pulseT: Math.random() * Math.PI * 2,
-          orbitOffset: (Math.random() - 0.5) * 0.04,
-        };
-      });
-    }
-
-    function spawnParticle(fromX, fromY, toX, toY, color) {
-      particles.push({
-        x: fromX,
-        y: fromY,
-        tx: toX,
-        ty: toY,
-        color,
-        prog: 0,
-        speed: 0.004 + Math.random() * 0.004,
-        size: 2 + Math.random() * 1.5,
-      });
-    }
-
-    function drawHub() {
-      // Outer glow ring
-      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
-      grd.addColorStop(0, 'rgba(240,180,41,0.18)');
-      grd.addColorStop(0.6, 'rgba(240,180,41,0.05)');
-      grd.addColorStop(1, 'transparent');
-      ctx.beginPath();
-      ctx.arc(cx, cy, 60, 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-
-      // Center circle
-      ctx.beginPath();
-      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(240,180,41,0.15)';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cx, cy, 12, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(240,180,41,0.4)';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(240,180,41,0.9)';
-      ctx.fill();
-
-      // FH text
-      ctx.font = 'bold 8px "Space Grotesk", sans-serif';
-      ctx.fillStyle = '#08080f';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('FH', cx, cy);
-    }
-
-    function drawNodes() {
-      nodes.forEach((n, i) => {
-        // Slow drift
-        n.angle = n.baseAngle + Math.sin(t * 0.3 + i) * 0.04;
-        const nx = cx + Math.cos(n.angle) * orbitR;
-        const ny = cy + Math.sin(n.angle) * orbitR;
-        n.x = nx;
-        n.y = ny;
-
-        // Spoke line
-        const lineGrd = ctx.createLinearGradient(cx, cy, nx, ny);
-        lineGrd.addColorStop(0, n.color + '0.4)');
-        lineGrd.addColorStop(1, n.color + '0.1)');
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(nx, ny);
-        ctx.strokeStyle = lineGrd;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Pulse ring
-        n.pulseT += 0.02;
-        const pulseScale = 1 + Math.sin(n.pulseT) * 0.35;
-        ctx.beginPath();
-        ctx.arc(nx, ny, spokeR * pulseScale, 0, Math.PI * 2);
-        ctx.fillStyle = n.color + '0.08)';
-        ctx.fill();
-
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(nx, ny, spokeR, 0, Math.PI * 2);
-        ctx.fillStyle = n.color + '0.25)';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(nx, ny, spokeR - 2, 0, Math.PI * 2);
-        ctx.fillStyle = n.color + '0.7)';
-        ctx.fill();
-
-        // Label
-        const labelDist = 22;
-        const lx = cx + Math.cos(n.angle) * (orbitR + labelDist);
-        const ly = cy + Math.sin(n.angle) * (orbitR + labelDist);
-        ctx.font = '500 11px "Inter", sans-serif';
-        ctx.fillStyle = n.color + '0.6)';
-        ctx.textAlign = lx > cx ? 'left' : 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(n.label, lx, ly);
-      });
-    }
-
-    function drawParticles() {
-      particles = particles.filter(p => p.prog < 1);
-      particles.forEach(p => {
-        p.prog = Math.min(1, p.prog + p.speed);
-        const ease = 1 - Math.pow(1 - p.prog, 3);
-        const px = p.x + (p.tx - p.x) * ease;
-        const py = p.y + (p.ty - p.y) * ease;
-        ctx.beginPath();
-        ctx.arc(px, py, p.size * (1 - p.prog * 0.5), 0, Math.PI * 2);
-        ctx.fillStyle = p.color + (0.8 * (1 - p.prog)) + ')';
-        ctx.fill();
-      });
-    }
-
-    // Orbit ring
-    function drawOrbitRing() {
-      ctx.beginPath();
-      ctx.arc(cx, cy, orbitR, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 8]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    let lastSpawn = 0;
-    function tick(timestamp) {
-      ctx.clearRect(0, 0, W, H);
-      t += 0.01;
-
-      drawOrbitRing();
-      drawHub();
-      drawNodes();
-      drawParticles();
-
-      // Spawn a particle every ~600ms
-      if (timestamp - lastSpawn > 600 && nodes.length) {
-        lastSpawn = timestamp;
-        const n = nodes[Math.floor(Math.random() * nodes.length)];
-        if (n.x !== undefined) {
-          // 50/50: hub→spoke or spoke→hub
-          if (Math.random() > 0.5) {
-            spawnParticle(cx, cy, n.x, n.y, n.color);
-          } else {
-            spawnParticle(n.x, n.y, cx, cy, n.color);
-          }
-        }
-      }
-
-      animFrameId = requestAnimationFrame(tick);
-    }
-
-    // Only run canvas when section is visible
-    const heroSection = document.querySelector('.hero');
-    const canvasObserver = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          if (!animFrameId) animFrameId = requestAnimationFrame(tick);
-        } else {
-          cancelAnimationFrame(animFrameId);
-          animFrameId = null;
-        }
-      });
-    });
-
-    canvasObserver.observe(heroSection);
-
-    window.addEventListener('resize', () => {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-      resize();
-      animFrameId = requestAnimationFrame(tick);
-    });
-
-    resize();
-  }
-
-  /* ── Scroll-triggered reveal animations ── */
-  function setupScrollReveal() {
-    const targets = document.querySelectorAll(
-      '.origin__item, .ecosystem__card, .factory__step, .factory__arrow'
-    );
-
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // Staggered delay for ecosystem cards
-          const card = entry.target;
-          const siblings = card.parentElement
-            ? Array.from(card.parentElement.children).filter(c => c.classList.contains('ecosystem__card'))
-            : [];
-          const idx = siblings.indexOf(card);
-          if (idx >= 0) {
-            card.style.transitionDelay = (idx * 0.08) + 's';
-          }
-          card.classList.add('is-visible');
-          revealObserver.unobserve(card);
-        }
-      });
-    }, {
-      threshold: 0.12,
-      rootMargin: '0px 0px -40px 0px',
-    });
-
-    targets.forEach(el => revealObserver.observe(el));
-  }
-
-  setupScrollReveal();
-
-  /* ── Smooth active section highlighting in nav ── */
+  // Active nav link
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav__links a');
-
-  const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.getAttribute('id');
-        navLinks.forEach(link => {
-          link.classList.toggle('is-active', link.getAttribute('href') === '#' + id);
-        });
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+id));
       }
     });
-  }, { threshold: 0.4 });
+  }, {threshold: 0.4}).observe && sections.forEach(s =>
+    new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+e.target.id));
+        }
+      });
+    }, {threshold: 0.4}).observe(s)
+  );
 
-  sections.forEach(s => sectionObserver.observe(s));
+  // Scroll reveal
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      // stagger portfolio cards
+      if (el.classList.contains('pcard') || el.classList.contains('social-card')) {
+        const siblings = Array.from(el.parentElement.children).filter(c => c.classList.contains(el.classList[0]));
+        const idx = siblings.indexOf(el);
+        el.style.transitionDelay = (idx * 0.07) + 's';
+      }
+      el.classList.add('is-visible');
+      revealObs.unobserve(el);
+    });
+  }, {threshold: 0.1, rootMargin: '0px 0px -30px 0px'});
 
-  /* ── Active nav link style injection ── */
-  const style = document.createElement('style');
-  style.textContent = `
-    .nav__links a.is-active {
-      color: var(--gold) !important;
+  document.querySelectorAll('.pcard, .social-card, .reveal-item').forEach(el => revealObs.observe(el));
+
+  // Hub-and-spoke canvas
+  const canvas = document.getElementById('hubCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const SPOKES = [
+    {label:'Frances & Family',   color:'rgba(240,180,41,'},
+    {label:'Cool Cat Stuff',      color:'rgba(59,158,255,'},
+    {label:'The Good Meow',       color:'rgba(52,211,153,'},
+    {label:'Vet Van Fleet',       color:'rgba(34,211,238,'},
+    {label:'Vibecode Cat',        color:'rgba(167,139,250,'},
+    {label:'User Generated Cats', color:'rgba(251,113,133,'},
+  ];
+
+  let W, H, cx, cy, orbitR, nodes = [], particles = [], t = 0, rafId, lastSpawn = 0;
+
+  function resize() {
+    W = canvas.offsetWidth; H = canvas.offsetHeight;
+    canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    cx = W * 0.64; cy = H * 0.5; orbitR = Math.min(W, H) * 0.3;
+    nodes = SPOKES.map((s, i) => {
+      const a = (i / SPOKES.length) * Math.PI * 2 - Math.PI / 2;
+      return {baseAngle: a, angle: a, color: s.color, label: s.label, pulseT: Math.random()*Math.PI*2};
+    });
+  }
+
+  function spawn(fx, fy, tx, ty, color) {
+    particles.push({x:fx,y:fy,tx,ty,color,prog:0,speed:.003+Math.random()*.004,size:2+Math.random()*1.5});
+  }
+
+  function frame(ts) {
+    ctx.clearRect(0, 0, W, H);
+    t += 0.008;
+
+    // orbit ring
+    ctx.beginPath(); ctx.arc(cx, cy, orbitR, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,10]); ctx.stroke(); ctx.setLineDash([]);
+
+    // hub glow
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,55);
+    g.addColorStop(0,'rgba(240,180,41,.18)'); g.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(cx,cy,55,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,14,0,Math.PI*2); ctx.fillStyle='rgba(240,180,41,.4)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,7,0,Math.PI*2); ctx.fillStyle='rgba(240,180,41,.9)'; ctx.fill();
+    ctx.font='bold 7px "Space Grotesk",sans-serif'; ctx.fillStyle='#08080f';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('FH',cx,cy);
+
+    nodes.forEach((n, i) => {
+      n.angle = n.baseAngle + Math.sin(t*.3+i)*.035;
+      n.x = cx + Math.cos(n.angle)*orbitR;
+      n.y = cy + Math.sin(n.angle)*orbitR;
+
+      // spoke
+      const lg = ctx.createLinearGradient(cx,cy,n.x,n.y);
+      lg.addColorStop(0, n.color+'0.35)'); lg.addColorStop(1, n.color+'0.08)');
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(n.x,n.y);
+      ctx.strokeStyle=lg; ctx.lineWidth=1; ctx.stroke();
+
+      // node
+      n.pulseT += 0.018;
+      const ps = 1 + Math.sin(n.pulseT)*.3;
+      ctx.beginPath(); ctx.arc(n.x,n.y,10*ps,0,Math.PI*2);
+      ctx.fillStyle=n.color+'0.07)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x,n.y,8,0,Math.PI*2);
+      ctx.fillStyle=n.color+'0.2)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x,n.y,5,0,Math.PI*2);
+      ctx.fillStyle=n.color+'0.75)'; ctx.fill();
+
+      // label
+      const ld = 20, lx = cx+Math.cos(n.angle)*(orbitR+ld), ly = cy+Math.sin(n.angle)*(orbitR+ld);
+      ctx.font='500 10px "Inter",sans-serif'; ctx.fillStyle=n.color+'0.55)';
+      ctx.textAlign = lx > cx ? 'left' : 'right'; ctx.textBaseline='middle';
+      ctx.fillText(n.label, lx, ly);
+    });
+
+    // particles
+    particles = particles.filter(p => p.prog < 1);
+    particles.forEach(p => {
+      p.prog = Math.min(1, p.prog + p.speed);
+      const e = 1 - Math.pow(1-p.prog, 3);
+      const px = p.x + (p.tx-p.x)*e, py = p.y + (p.ty-p.y)*e;
+      ctx.beginPath(); ctx.arc(px,py,p.size*(1-p.prog*.5),0,Math.PI*2);
+      ctx.fillStyle = p.color + (0.8*(1-p.prog)) + ')'; ctx.fill();
+    });
+
+    if (ts - lastSpawn > 700 && nodes.length && nodes[0].x) {
+      lastSpawn = ts;
+      const n = nodes[Math.floor(Math.random()*nodes.length)];
+      Math.random() > .5 ? spawn(cx,cy,n.x,n.y,n.color) : spawn(n.x,n.y,cx,cy,n.color);
     }
-  `;
-  document.head.appendChild(style);
 
+    rafId = requestAnimationFrame(frame);
+  }
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { if (!rafId) rafId = requestAnimationFrame(frame); }
+    else { cancelAnimationFrame(rafId); rafId = null; }
+  }).observe(document.querySelector('.hero'));
+
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rafId); rafId = null; resize(); rafId = requestAnimationFrame(frame);
+  });
+
+  resize();
 })();
