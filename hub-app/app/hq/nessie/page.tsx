@@ -9,11 +9,11 @@ const TIER_LABEL: Record<string, string> = {
   complex: 'Claude 3.5 Haiku',
 }
 
-export default function HermesPage() {
+export default function NessiePage() {
   const [task, setTask] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [plan, setPlan] = useState<string | null>(null)
+  const [reply, setReply] = useState<string | null>(null)
   const [tier, setTier] = useState<string | null>(null)
   const [model, setModel] = useState<string | null>(null)
   const [usage, setUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number } | null>(null)
@@ -23,16 +23,16 @@ export default function HermesPage() {
     if (!task.trim()) return
     setLoading(true)
     setError(null)
-    setPlan(null)
+    setReply(null)
     try {
-      const res = await fetch('/api/hq/hermes', {
+      const res = await fetch('/api/hq/nessie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Request failed')
-      setPlan(data.plan)
+      setReply(data.reply)
       setTier(data.tier)
       setModel(data.model)
       setUsage(data.usage ?? null)
@@ -49,10 +49,10 @@ export default function HermesPage() {
         <Link href="/hq" className="text-xs text-amber-400/70 hover:text-amber-300">
           ← Back to Command Center
         </Link>
-        <h1 className="text-xl font-semibold text-white mt-2">Hermes Coordinator</h1>
+        <h1 className="text-xl font-semibold text-white mt-2">Nessie — Chief of Staff</h1>
         <p className="text-sm text-white/50 mt-1">
-          Describe a task and Hermes will draft a plan, routed through the cheapest safe model.
-          Drafts only — nothing here takes external action.
+          Your Donna. Give her a deal to assess, a day to plan, a mess to organize, or a
+          draft to write. She decides, you approve — nothing leaves the building without you.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function HermesPage() {
         <textarea
           value={task}
           onChange={(e) => setTask(e.target.value)}
-          placeholder="e.g. Organize this week's pet care cases by urgency and summarize what needs attention."
+          placeholder="e.g. Here's a brand deal offer I got today — tell me if it's worth it and draft my reply…"
           rows={5}
           className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400/40"
         />
@@ -69,7 +69,7 @@ export default function HermesPage() {
           disabled={loading || !task.trim()}
           className="self-start rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-400/20 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {loading ? 'Thinking…' : 'Ask Hermes'}
+          {loading ? 'Thinking…' : 'Ask Nessie'}
         </button>
       </form>
 
@@ -84,7 +84,7 @@ export default function HermesPage() {
         </div>
       )}
 
-      {plan && (
+      {reply && (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
             <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-semibold text-amber-300">
@@ -97,7 +97,7 @@ export default function HermesPage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{plan}</p>
+          <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{reply}</p>
         </div>
       )}
     </div>

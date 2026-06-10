@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pickModel } from '@/lib/hq/agents/router'
 import { callOpenRouter } from '@/lib/hq/agents/llm'
-import { HERMES_SYSTEM_PROMPT } from '@/lib/hq/agents/hermes'
+import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
   const model = pickModel(task)
 
   try {
-    const result = await callOpenRouter(model.id, HERMES_SYSTEM_PROMPT, task)
+    const result = await callOpenRouter(model.id, NESSIE_SYSTEM_PROMPT, task)
     return NextResponse.json({
-      plan: result.content,
+      reply: result.content,
       model: result.model,
       tier: model.tier,
       usage: result.usage,

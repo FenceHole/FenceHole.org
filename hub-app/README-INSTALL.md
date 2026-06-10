@@ -12,10 +12,14 @@ deployed right now.
 - **Team Hub** — `/hub` dashboard, `/hub/brands`, `/hub/content`, `/hub/crm`
 - **Client portal** — `/client`
 - **FenceHole HQ** — `/hq` Command Center + `/hq/agents` sandboxed Agent Crew
-- **Hermes Coordinator + AI Router** — `/hq/hermes`, a real working agent that
-  drafts plans and routes them to the cheapest safe model (Qwen for most tasks,
-  Claude for harder planning) via OpenRouter
-- **Supabase schema** — `supabase/schema.sql` (tables + row-level security)
+- **Nessie — Chief of Staff** — `/hq/nessie`, the lead agent (your Donna):
+  assesses, plans, drafts in Chris's voice, routed to the cheapest safe model
+  (Qwen for most tasks, Claude for harder planning) via OpenRouter
+- **Deal Desk** — `/hq/deals`: log every brand deal offer, Nessie gives a
+  TAKE/COUNTER/PASS verdict, priority, and a drafted reply
+- **Approvals** — `/hq/approvals`: every agent draft waits for your sign-off
+- **Supabase schema** — `supabase/schema.sql` + `supabase/hq-schema.sql`
+  (tables + row-level security)
 
 ## How to install (no terminal needed)
 
@@ -30,13 +34,14 @@ deployed right now.
 ## How to turn on logins (one time, ~5 minutes)
 
 1. Go to **supabase.com/dashboard** → your project → **SQL Editor** → paste the
-   contents of `supabase/schema.sql` → **Run**.
+   contents of `supabase/schema.sql` → **Run**. Then do the same with
+   `supabase/hq-schema.sql` (Deal Desk + Approvals tables).
 2. Go to **Authentication → Users → Add user → Create new user**. Enter your
    email and a strong password. That's your login.
 3. Repeat for each team member. Done — `/hub`, `/client`, and `/hq` now require
    those passwords.
 
-## How to turn on Hermes + the AI Router (~2 minutes)
+## How to turn on Nessie + the AI Router (~2 minutes)
 
 1. Get a free key at **openrouter.ai** (sign up with email, then
    **Keys → Create Key**).
@@ -44,7 +49,7 @@ deployed right now.
    - Name: `OPENROUTER_API_KEY`
    - Value: the key you just created
 3. Redeploy (Vercel → Deployments → ⋯ on the latest → Redeploy).
-4. Visit `/hq/hermes`, type a task, and click **Ask Hermes**. It will pick
+4. Visit `/hq/nessie`, type a task, and click **Ask Nessie**. It will pick
    Qwen 2.5 7B for simple tasks, Qwen 2.5 72B for medium tasks, and Claude 3.5
    Haiku for planning/decomposition — shown under the response along with
    token usage.
@@ -53,6 +58,6 @@ deployed right now.
 
 All HQ agents are sandboxed and static: no external actions, no email, no
 payments, no deploys. The `isActionAllowed()` gate is hard-coded to `false`
-until Chris reviews and enables permissions. Hermes can only plan, draft,
-summarize, and route — its system prompt enforces the same hard rules and
-will flag (not perform) any request that needs your approval.
+until Chris reviews and enables permissions. Nessie can only plan, draft,
+summarize, and route — her system prompt enforces the same hard rules and
+she flags (never performs) any request that needs your approval.

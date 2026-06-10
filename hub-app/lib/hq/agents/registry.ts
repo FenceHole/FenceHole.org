@@ -2,10 +2,19 @@ import type { Agent } from './types'
 
 export const AGENT_REGISTRY: Agent[] = [
   {
+    id: 'nessie-chief-of-staff',
+    name: 'Nessie',
+    role: 'Chief of Staff (Lead Agent)',
+    description: 'Chris\'s Donna. Leads the crew: assesses deals, plans the day, drafts in his voice, decides — Chris approves.',
+    status: 'sandboxed',
+    capabilities: ['plan', 'route', 'decompose', 'draft', 'summarize', 'suggest'],
+    canExecuteExternalActions: false,
+  },
+  {
     id: 'hermes-coordinator',
     name: 'Hermes Coordinator',
-    role: 'Agent Coordinator',
-    description: 'Plans multi-step work and coordinates task packets across other agents.',
+    role: 'Dispatch & Routing',
+    description: 'Works under Nessie: turns her plans into task packets and routes them across the crew.',
     status: 'sandboxed',
     capabilities: ['plan', 'route', 'decompose'],
     canExecuteExternalActions: false,
