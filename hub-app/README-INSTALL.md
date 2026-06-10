@@ -12,6 +12,9 @@ deployed right now.
 - **Team Hub** — `/hub` dashboard, `/hub/brands`, `/hub/content`, `/hub/crm`
 - **Client portal** — `/client`
 - **FenceHole HQ** — `/hq` Command Center + `/hq/agents` sandboxed Agent Crew
+- **Hermes Coordinator + AI Router** — `/hq/hermes`, a real working agent that
+  drafts plans and routes them to the cheapest safe model (Qwen for most tasks,
+  Claude for harder planning) via OpenRouter
 - **Supabase schema** — `supabase/schema.sql` (tables + row-level security)
 
 ## How to install (no terminal needed)
@@ -33,8 +36,23 @@ deployed right now.
 3. Repeat for each team member. Done — `/hub`, `/client`, and `/hq` now require
    those passwords.
 
+## How to turn on Hermes + the AI Router (~2 minutes)
+
+1. Get a free key at **openrouter.ai** (sign up with email, then
+   **Keys → Create Key**).
+2. In Vercel → your `hub` project → **Settings → Environment Variables**, add:
+   - Name: `OPENROUTER_API_KEY`
+   - Value: the key you just created
+3. Redeploy (Vercel → Deployments → ⋯ on the latest → Redeploy).
+4. Visit `/hq/hermes`, type a task, and click **Ask Hermes**. It will pick
+   Qwen 2.5 7B for simple tasks, Qwen 2.5 72B for medium tasks, and Claude 3.5
+   Haiku for planning/decomposition — shown under the response along with
+   token usage.
+
 ## Safety
 
 All HQ agents are sandboxed and static: no external actions, no email, no
 payments, no deploys. The `isActionAllowed()` gate is hard-coded to `false`
-until Chris reviews and enables permissions.
+until Chris reviews and enables permissions. Hermes can only plan, draft,
+summarize, and route — its system prompt enforces the same hard rules and
+will flag (not perform) any request that needs your approval.
