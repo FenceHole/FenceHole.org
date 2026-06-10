@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080f;color:#f0f0f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#08080f}
+::-webkit-scrollbar-thumb{background:#44445a;border-radius:3px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.card{background:#111120;border:1px solid rgba(255,255,255,0.07);border-radius:12px}
+.btn-primary{background:#f0b429;color:#08080f;font-weight:700;padding:10px 20px;border-radius:8px;font-size:14px;transition:opacity .15s;cursor:pointer;border:none}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:#8888aa;font-weight:500;padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,0.07)}
+.btn-ghost:hover{background:#16162a;color:#f0f0f4}
+.input{width:100%;background:#111120;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 14px;font-size:14px;color:#f0f0f4;outline:none;transition:border-color .15s}
+.input:focus{border-color:rgba(240,180,41,0.4)}
+.input::placeholder{color:#44445a}
+.label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#44445a;margin-bottom:6px;display:block}
+textarea.input{resize:vertical;min-height:80px}
+select.input{cursor:pointer}
