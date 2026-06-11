@@ -1,8 +1,9 @@
 # FenceHole Hub — Full App (verified build)
 
-This folder is the complete FenceHole Hub + HQ app, ready to drop into the
-`FenceHole/Fence-Hole-Hub` repo. It replaces the placeholder scaffold that is
-deployed right now.
+This is the complete FenceHole Hub + HQ app. It now deploys directly from this
+repo (`FenceHole/FenceHole.org`) to **fencehole.org**, replacing the old
+public portfolio site at that domain. The portfolio site has been moved to
+`portfolio-site/` (see below) so it can be deployed to **fencehole.com**.
 
 ## What's inside
 
@@ -21,16 +22,6 @@ deployed right now.
 - **Supabase schema** — `supabase/schema.sql` + `supabase/hq-schema.sql`
   (tables + row-level security)
 
-## How to install (no terminal needed)
-
-1. Download this folder to your Mac (Code → Download ZIP on this repo, unzip,
-   open the `hub-app` folder).
-2. Go to **github.com/FenceHole/Fence-Hole-Hub** → **Add file → Upload files**.
-3. In Finder, open the `hub-app` folder, **Select All** (Cmd+A), and drag
-   everything onto the upload page. GitHub keeps the folder structure.
-4. Commit message: `Replace scaffold with full Hub + HQ app`, then
-   **Commit changes**. Vercel auto-deploys in ~2 minutes.
-
 ## How to turn on logins (one time, ~5 minutes)
 
 1. Go to **supabase.com/dashboard** → your project → **SQL Editor** → paste the
@@ -45,7 +36,8 @@ deployed right now.
 
 1. Get a free key at **openrouter.ai** (sign up with email, then
    **Keys → Create Key**).
-2. In Vercel → your `hub` project → **Settings → Environment Variables**, add:
+2. In Vercel → the project that serves **fencehole.org** (`fence-hole-org`)
+   → **Settings → Environment Variables**, add:
    - Name: `OPENROUTER_API_KEY`
    - Value: the key you just created
 3. Redeploy (Vercel → Deployments → ⋯ on the latest → Redeploy).
@@ -53,6 +45,18 @@ deployed right now.
    Qwen 2.5 7B for simple tasks, Qwen 2.5 72B for medium tasks, and Claude 3.5
    Haiku for planning/decomposition — shown under the response along with
    token usage.
+
+## The portfolio site (`portfolio-site/`)
+
+The original public portfolio (Fence Hole LLC | Cat Media Conglomerate, with
+all six properties) is now in `portfolio-site/`. It's a static HTML/CSS/JS
+site. To put it live at **fencehole.com**:
+
+1. In Vercel, create a new project from this repo (`FenceHole/FenceHole.org`)
+   with **Root Directory** set to `portfolio-site`, framework preset "Other"
+   (no build command, output directory `.`).
+2. Add **fencehole.com** (and `www.fencehole.org` if you want it pointed here
+   instead of the Hub) as a custom domain on that new project.
 
 ## Safety
 
