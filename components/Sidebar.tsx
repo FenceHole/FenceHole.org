@@ -8,6 +8,7 @@ const NAV=[
   {href:'/hub/brands',label:'Brands',icon:'📦'},
   {href:'/hub/content',label:'Content',icon:'✍️'},
   {href:'/client',label:'Client Portal',icon:'👤'},
+  {href:'/account/security',label:'Security',icon:'🔒'},
 ]
 export default function Sidebar({userName}:{userName:string}) {
   const pathname=usePathname()

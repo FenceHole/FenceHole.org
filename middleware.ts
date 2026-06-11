@@ -18,8 +18,13 @@ export async function middleware(request: NextRequest) {
   })
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
-  if ((path.startsWith('/hub') || path.startsWith('/client') || path.startsWith('/hq')) && !user)
-    return NextResponse.redirect(new URL('/login', request.url))
+  const isProtected = path.startsWith('/hub') || path.startsWith('/client') || path.startsWith('/hq') || path.startsWith('/account')
+  if (isProtected) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aal && aal.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel)
+      return NextResponse.redirect(new URL('/login', request.url))
+  }
   return res
 }
-export const config = { matcher: ['/hub/:path*', '/client/:path*', '/hq/:path*'] }
+export const config = { matcher: ['/hub/:path*', '/client/:path*', '/hq/:path*', '/account/:path*'] }
