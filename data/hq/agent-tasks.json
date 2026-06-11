@@ -1,0 +1,47 @@
+[
+  {
+    "id": "task-001",
+    "title": "Summarize this week's Brain Explorer notes",
+    "agentId": "brain-librarian",
+    "state": "queued",
+    "summary": "Draft a short recap of new notes added to the second brain this week.",
+    "requiresApproval": false,
+    "createdAt": "2026-06-01T09:00:00Z"
+  },
+  {
+    "id": "task-002",
+    "title": "Draft outreach note for a potential vet partner",
+    "agentId": "outreach-drafter",
+    "state": "in_review",
+    "summary": "Prepare a draft message for Chris to review before any contact is made.",
+    "requiresApproval": true,
+    "createdAt": "2026-06-02T14:30:00Z"
+  },
+  {
+    "id": "task-003",
+    "title": "Flag a task that requests external contact",
+    "agentId": "safety-officer",
+    "state": "blocked",
+    "summary": "A drafted task attempted to reference direct contact — held for Chris approval.",
+    "requiresApproval": true,
+    "createdAt": "2026-06-03T11:15:00Z"
+  },
+  {
+    "id": "task-004",
+    "title": "Summarize current token usage trend",
+    "agentId": "cost-watcher",
+    "state": "completed",
+    "summary": "Weekly cost summary generated from local usage logs only.",
+    "requiresApproval": false,
+    "createdAt": "2026-06-04T08:00:00Z"
+  },
+  {
+    "id": "task-005",
+    "title": "Organize open pet care cases by urgency",
+    "agentId": "care-case-organizer",
+    "state": "queued",
+    "summary": "Sort current local case notes into a simple priority list for review.",
+    "requiresApproval": false,
+    "createdAt": "2026-06-05T16:45:00Z"
+  }
+]
