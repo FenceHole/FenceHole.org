@@ -18,9 +18,9 @@ export default function Sidebar({userName}:{userName:string}) {
   async function signOut(){const sb=createClient();await sb.auth.signOut();router.replace('/')}
   return(
     <aside style={{position:'fixed',left:0,top:0,bottom:0,width:220,background:'#0d0d1a',borderRight:'1px solid rgba(255,255,255,0.06)',display:'flex',flexDirection:'column',zIndex:20}}>
-      <div style={{padding:'20px 20px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:8}}>
-        <div style={{width:8,height:8,background:'#f0b429'}}/>
-        <span style={{fontWeight:700,fontSize:13,color:'#f0f0f4',letterSpacing:1}}>FENCE HOLE HUB</span>
+      <div style={{padding:'20px 20px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:10}}>
+        <img src="/nessie-emblem.jpg" alt="" className="emblem-ring" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover'}}/>
+        <span className="font-display" style={{fontWeight:700,fontSize:12,color:'#f0f0f4',letterSpacing:2}}>FENCE HOLE HUB</span>
       </div>
       <nav style={{flex:1,padding:'12px 12px',display:'flex',flexDirection:'column',gap:2}}>
         {NAV.map(item=>{

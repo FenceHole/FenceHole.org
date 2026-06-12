@@ -14,7 +14,8 @@ export default async function DashboardPage() {
   return(
     <div style={{padding:32,maxWidth:900}}>
       <p style={{fontSize:10,fontWeight:700,letterSpacing:3,color:'#f0b429',marginBottom:4}}>FENCE HOLE HUB</p>
-      <h1 style={{fontSize:32,fontWeight:700,color:'#f0f0f4',marginBottom:32}}>Hey, {name} 👋</h1>
+      <h1 className="font-display" style={{fontSize:32,fontWeight:600,color:'#f0f0f4',marginBottom:12}}>Hey, {name}</h1>
+      <div className="gold-divider" style={{width:64,marginBottom:32}}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:32}}>
         {[{label:'Active Deals',value:deals?.length??0,color:'#f0b429',href:'/hub/crm'},{label:'Open Tasks',value:tasks?.length??0,color:'#3b9eff',href:'/hub/brands'},{label:'Story Ideas',value:ideas?.length??0,color:'#34d399',href:'/hub/content'}].map(s=>(
           <Link key={s.label} href={s.href} className="card" style={{padding:20,display:'block',textDecoration:'none'}}>

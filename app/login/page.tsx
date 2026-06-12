@@ -50,12 +50,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:16,background:'#08080f'}}>
+    <div className="hq-bg" style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div style={{width:'100%',maxWidth:360}}>
         <Link href="/" style={{display:'block',marginBottom:40,fontSize:14,color:'#44445a'}}>← Back</Link>
         <div style={{marginBottom:32}}>
-          <div style={{width:10,height:10,background:'#f0b429',marginBottom:20}}/>
-          <h1 style={{fontSize:32,fontWeight:700,color:'#f0f0f4',marginBottom:8}}>Fence Hole Hub</h1>
+          <img src="/nessie-emblem.jpg" alt="" className="emblem-ring" style={{width:48,height:48,borderRadius:'50%',objectFit:'cover',marginBottom:20}}/>
+          <h1 className="font-display" style={{fontSize:32,fontWeight:600,color:'#f0f0f4',marginBottom:8}}>Fence Hole Hub</h1>
           <p style={{fontSize:14,color:'#8888aa'}}>Team access only.</p>
         </div>
         {!needsMfa ? (
