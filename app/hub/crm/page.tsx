@@ -25,8 +25,8 @@ export default function CRMPage() {
   const statusMap=Object.fromEntries(DEAL_STATUSES.map(s=>[s.id,s]))
   const brandMap=Object.fromEntries(BRANDS.map(b=>[b.id,b]))
   return(
-    <div style={{padding:32,maxWidth:900}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+    <div className="page-pad" style={{maxWidth:900}}>
+      <div className="header-row" style={{marginBottom:24}}>
         <div><p style={{fontSize:10,fontWeight:700,letterSpacing:3,color:'#44445a',marginBottom:4}}>WORKSPACE</p><h1 style={{fontSize:28,fontWeight:700,color:'#f0f0f4'}}>CRM & Brand Deals</h1></div>
         <div style={{display:'flex',gap:8}}>
           {tab==='deals'&&<button className="btn-primary" style={{fontSize:13}} onClick={()=>setShowDeal(true)}>+ New Deal</button>}
@@ -68,7 +68,7 @@ export default function CRMPage() {
             </div>
           )}
           {tab==='contacts'&&(
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:12}}>
+            <div className="grid-2">
               {contacts.length===0&&<p style={{color:'#44445a',fontSize:14,gridColumn:'span 2'}}>No contacts yet.</p>}
               {contacts.map(c=>(
                 <div key={c.id} className="card" style={{padding:16}}>
@@ -133,7 +133,7 @@ function NewDealForm({contacts,onSaved,onClose}:{contacts:Contact[];onSaved:()=>
       <div><label className="label">Deal Title *</label><input className="input" value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Royal Canin Sponsorship" required/></div>
       <div><label className="label">Brand *</label><select className="input" value={brand} onChange={e=>setBrand(e.target.value)}>{BRANDS.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
       <div><label className="label">Status</label><select className="input" value={status} onChange={e=>setStatus(e.target.value)}>{DEAL_STATUSES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select></div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div className="form-grid-2">
         <div><label className="label">Value ($)</label><input className="input" type="number" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
         <div><label className="label">Due Date</label><input className="input" type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></div>
       </div>
@@ -153,7 +153,7 @@ function NewContactForm({onSaved,onClose}:{onSaved:()=>void;onClose:()=>void}) {
     <form onSubmit={save} style={{display:'flex',flexDirection:'column',gap:14}}>
       <div><label className="label">Name *</label><input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" required/></div>
       <div><label className="label">Email</label><input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="their@email.com"/></div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div className="form-grid-2">
         <div><label className="label">Company</label><input className="input" value={company} onChange={e=>setCompany(e.target.value)} placeholder="Brand / Agency"/></div>
         <div><label className="label">Title</label><input className="input" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Marketing Mgr"/></div>
       </div>

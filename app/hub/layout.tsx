@@ -10,7 +10,7 @@ export default async function HubLayout({children}:{children:React.ReactNode}) {
   return(
     <div className="hq-bg" style={{display:'flex',minHeight:'100vh'}}>
       <Sidebar userName={p?.full_name?.split(' ')[0]??'Team'}/>
-      <main style={{flex:1,overflowY:'auto',marginLeft:220}}>{children}</main>
+      <main className="pt-14 md:pt-0 md:ml-[220px]" style={{flex:1,overflowY:'auto'}}>{children}</main>
     </div>
   )
 }

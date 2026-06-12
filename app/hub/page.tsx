@@ -12,11 +12,11 @@ export default async function DashboardPage() {
   ])
   const name=p?.full_name?.split(' ')[0]??'Team'
   return(
-    <div style={{padding:32,maxWidth:900}}>
+    <div className="page-pad" style={{maxWidth:900}}>
       <p style={{fontSize:10,fontWeight:700,letterSpacing:3,color:'#f0b429',marginBottom:4}}>FENCE HOLE HUB</p>
       <h1 className="font-display" style={{fontSize:32,fontWeight:600,color:'#f0f0f4',marginBottom:12}}>Hey, {name}</h1>
       <div className="gold-divider" style={{width:64,marginBottom:32}}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:32}}>
+      <div className="grid-3" style={{marginBottom:32}}>
         {[{label:'Active Deals',value:deals?.length??0,color:'#f0b429',href:'/hub/crm'},{label:'Open Tasks',value:tasks?.length??0,color:'#3b9eff',href:'/hub/brands'},{label:'Story Ideas',value:ideas?.length??0,color:'#34d399',href:'/hub/content'}].map(s=>(
           <Link key={s.label} href={s.href} className="card" style={{padding:20,display:'block',textDecoration:'none'}}>
             <p style={{fontSize:28,fontWeight:700,color:s.color,marginBottom:4}}>{s.value}</p>
@@ -25,7 +25,7 @@ export default async function DashboardPage() {
         ))}
       </div>
       <p style={{fontSize:10,fontWeight:700,letterSpacing:3,color:'#44445a',marginBottom:16}}>BRAND WORKSPACES</p>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:12}}>
+      <div className="grid-2">
         {BRANDS.map(b=>(
           <Link key={b.id} href={`/hub/brands/${b.id}`} className="card" style={{padding:20,display:'block',textDecoration:'none',borderTop:`2px solid ${b.color}`}}>
             <p style={{fontSize:9,fontWeight:700,letterSpacing:2,color:b.color,marginBottom:4}}>{b.tag}</p>

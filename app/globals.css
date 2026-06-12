@@ -25,3 +25,17 @@ a.card:hover{border-color:rgba(240,180,41,.25);box-shadow:0 4px 24px rgba(0,0,0,
 .label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#44445a;margin-bottom:6px;display:block}
 textarea.input{resize:vertical;min-height:80px}
 select.input{cursor:pointer}
+.page-pad{padding:16px}
+.grid-2{display:grid;grid-template-columns:1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr;gap:16px}
+.form-grid-2{display:grid;grid-template-columns:1fr;gap:12px}
+.header-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+@media(min-width:640px){
+  .page-pad{padding:32px}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(2,1fr)}
+  .form-grid-2{grid-template-columns:1fr 1fr}
+}
+@media(min-width:900px){
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+}

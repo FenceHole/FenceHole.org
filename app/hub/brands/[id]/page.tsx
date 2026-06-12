@@ -44,11 +44,11 @@ export default function BrandPage() {
     const next=t.status==='done'?'todo':t.status==='todo'?'in_progress':'done'
     await sb.from('tasks').update({status:next}).eq('id',t.id);fetchAll()
   }
-  if(!brand)return<div style={{padding:32}}><p style={{color:'#8888aa'}}>Brand not found.</p><Link href="/hub/brands" style={{color:'#f0b429',fontSize:14}}>← Back</Link></div>
+  if(!brand)return<div className="page-pad"><p style={{color:'#8888aa'}}>Brand not found.</p><Link href="/hub/brands" style={{color:'#f0b429',fontSize:14}}>← Back</Link></div>
   return(
-    <div style={{padding:32,maxWidth:800}}>
+    <div className="page-pad" style={{maxWidth:800}}>
       <Link href="/hub/brands" style={{fontSize:12,color:'#44445a',display:'block',marginBottom:16,textDecoration:'none'}}>← All Brands</Link>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+      <div className="header-row" style={{marginBottom:24}}>
         <div><p style={{fontSize:9,fontWeight:700,letterSpacing:2,color:brand.color,marginBottom:4}}>{brand.tag}</p><h1 style={{fontSize:24,fontWeight:700,color:'#f0f0f4'}}>{brand.name}</h1></div>
         <a href={brand.url} target="_blank" rel="noopener noreferrer" style={{fontSize:13,fontWeight:600,color:brand.color,textDecoration:'none'}}>{brand.url.replace('https://','')}&nbsp;↗</a>
       </div>
@@ -87,7 +87,7 @@ export default function BrandPage() {
                 <input className="input" style={{flex:1}} value={newTask} onChange={e=>setNewTask(e.target.value)} placeholder="Add a task…"/>
                 <button type="submit" className="btn-primary" style={{background:brand.color}} disabled={!newTask.trim()||saving}>{saving?'…':'Add'}</button>
               </form>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+              <div className="grid-3">
                 {(['todo','in_progress','done'] as const).map(status=>(
                   <div key={status}>
                     <p style={{fontSize:9,fontWeight:700,letterSpacing:2,color:'#44445a',marginBottom:12}}>{status==='todo'?'TO DO':status==='in_progress'?'IN PROGRESS':'DONE'} ({tasks.filter(t=>t.status===status).length})</p>

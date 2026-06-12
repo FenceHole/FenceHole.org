@@ -18,8 +18,8 @@ export default function ContentPage() {
     setIdeas(p=>p.map(i=>i.id===id?{...i,status}:i))
   }
   return(
-    <div style={{padding:32,height:'100vh',display:'flex',flexDirection:'column'}}>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:24}}>
+    <div className="page-pad" style={{height:'100vh',display:'flex',flexDirection:'column'}}>
+      <div className="header-row" style={{marginBottom:24}}>
         <div><p style={{fontSize:10,fontWeight:700,letterSpacing:3,color:'#44445a',marginBottom:4}}>THE GOOD MEOW</p><h1 style={{fontSize:28,fontWeight:700,color:'#f0f0f4'}}>Content Pipeline</h1></div>
         <button className="btn-primary" onClick={()=>setShowModal(true)}>+ Add Story Idea</button>
       </div>
