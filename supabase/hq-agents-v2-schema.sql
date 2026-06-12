@@ -10,7 +10,7 @@ create table if not exists public.agent_memory (
   updated_at timestamptz default now()
 );
 alter table public.agent_memory enable row level security;
-create policy "Team full access agent_memory" on agent_memory for all using (exists (select 1 from profiles where id=auth.uid() and role='team'));
+create policy "Team full access agent_memory" on agent_memory for all using (public.is_team_member());
 
 create table if not exists public.agent_conversations (
   id uuid default gen_random_uuid() primary key,
@@ -23,7 +23,7 @@ create table if not exists public.agent_conversations (
   created_at timestamptz default now()
 );
 alter table public.agent_conversations enable row level security;
-create policy "Team full access agent_conversations" on agent_conversations for all using (exists (select 1 from profiles where id=auth.uid() and role='team'));
+create policy "Team full access agent_conversations" on agent_conversations for all using (public.is_team_member());
 
 alter table public.agent_drafts add column if not exists channel text;
 alter table public.agent_drafts add column if not exists external_ref text;
