@@ -7,6 +7,7 @@ const NAV=[
   {href:'/hub/crm',label:'CRM',icon:'🤝'},
   {href:'/hub/brands',label:'Brands',icon:'📦'},
   {href:'/hub/content',label:'Content',icon:'✍️'},
+  {href:'/hq',label:'HQ / AI Agents',icon:'🤖'},
   {href:'/client',label:'Client Portal',icon:'👤'},
   {href:'/account/security',label:'Security',icon:'🔒'},
 ]
