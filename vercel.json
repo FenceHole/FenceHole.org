@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    { "path": "/api/cron/morning-briefing", "schedule": "0 13 * * *" },
+    { "path": "/api/cron/evening-recap", "schedule": "0 1 * * *" }
+  ]
 }

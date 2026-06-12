@@ -26,11 +26,24 @@ public portfolio site at that domain. The portfolio site has been moved to
 
 1. Go to **supabase.com/dashboard** → your project → **SQL Editor** → paste the
    contents of `supabase/schema.sql` → **Run**. Then do the same with
-   `supabase/hq-schema.sql` (Deal Desk + Approvals tables).
+   `supabase/hq-schema.sql` (Deal Desk + Approvals tables), then
+   `supabase/hq-agents-v2-schema.sql` (Nessie's memory, conversation log, and
+   WhatsApp-sourced drafts).
 2. Go to **Authentication → Users → Add user → Create new user**. Enter your
-   email and a strong password. That's your login.
-3. Repeat for each team member. Done — `/hub`, `/client`, and `/hq` now require
-   those passwords.
+   email and a strong password, and turn on **Auto Confirm User** so you don't
+   need to click an email link. That's your login. Repeat for each team member
+   (e.g. Marjorie).
+3. Back in **SQL Editor**, run (with your real emails):
+   ```sql
+   update public.profiles set role='team' where email in ('your@email.com','marjorie@email.com');
+   ```
+   New accounts default to `role='pending'`, which blocks Hub access — this
+   step is required.
+4. Log in at **fencehole.org/login**. Then click **🔒 Security** in the
+   sidebar (`/account/security`) to turn on two-factor auth — scan the QR
+   code with Google Authenticator / 1Password / Authy and enter the 6-digit
+   code. Do this for every account. Done — `/hub`, `/client`, and `/hq` now
+   require password + 2FA.
 
 ## How to turn on Nessie + the AI Router (~2 minutes)
 
@@ -46,6 +59,56 @@ public portfolio site at that domain. The portfolio site has been moved to
    Haiku for planning/decomposition — shown under the response along with
    token usage.
 
+## How to talk to Nessie on WhatsApp (~15 minutes)
+
+This wires up text, voice notes, and photos (snap a photo → Nessie estimates
+its value and drafts a marketplace listing for /hq/approvals).
+
+1. **Service role key** (so the webhook/cron jobs can read & write memory):
+   Supabase → **Settings → API** → copy the `service_role` key → add to
+   Vercel as `SUPABASE_SERVICE_ROLE_KEY`. Keep this one secret.
+2. **Free transcription**: sign up at **console.groq.com** → create an API
+   key → add to Vercel as `GROQ_API_KEY`. Powers voice-note transcription.
+3. **Twilio WhatsApp sandbox** (free): sign up at **twilio.com** →
+   **Messaging → Try it out → Send a WhatsApp message** → follow the prompt
+   to join the sandbox from your phone (send the given code to the Twilio
+   number on WhatsApp).
+   - Copy **Account SID** and **Auth Token** from the Twilio console → add as
+     `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`.
+   - Add `TWILIO_WHATSAPP_NUMBER` = `whatsapp:+14155238886` (the Twilio
+     sandbox number shown on that page).
+   - Add `WHATSAPP_ALLOWED_NUMBERS` = your WhatsApp number(s) in the form
+     `whatsapp:+15551234567` (comma-separate for Marjorie too). This stops
+     random numbers from using your AI Router budget.
+   - Add `CHRIS_WHATSAPP_NUMBER` = your number, same format — this is where
+     morning briefings and evening recaps get sent.
+4. In Twilio: **Messaging → WhatsApp sandbox settings** → set "WHEN A MESSAGE
+   COMES IN" to:
+   `https://fencehole.org/api/whatsapp/webhook` (method: POST).
+5. Redeploy after adding the env vars. Text the Twilio sandbox number on
+   WhatsApp — Nessie replies. Send a photo of something to sell to see the
+   marketplace-listing flow.
+
+> Note: the Twilio sandbox requires each phone to re-join every 72 hours by
+> texting the join code again. For a permanent number with no rejoin step,
+> upgrade to a paid Twilio WhatsApp sender (still cheap — a few dollars/month).
+
+## Morning briefings & evening recaps
+
+Vercel Cron calls `/api/cron/morning-briefing` and `/api/cron/evening-recap`
+on a schedule (set in `vercel.json`, currently ~8am/8pm US Eastern — adjust
+the cron times for your timezone). Requires the WhatsApp setup above. Add a
+`CRON_SECRET` env var (any random string) for extra protection — Vercel sends
+it automatically as a header once set.
+
+## Plaud AI Pin / Zapier inbox
+
+Point a Zapier "Webhooks by Zapier → POST" action at:
+`https://fencehole.org/api/zapier/webhook?secret=YOUR_ZAPIER_WEBHOOK_SECRET`
+with JSON body `{"text": "{{transcript}}", "source": "plaud"}`. Set
+`ZAPIER_WEBHOOK_SECRET` in Vercel to match. Notes land in Nessie's memory and
+show up as context the next time you talk to her.
+
 ## The portfolio site (`portfolio-site/`)
 
 The original public portfolio (Fence Hole LLC | Cat Media Conglomerate, with
@@ -60,8 +123,10 @@ site. To put it live at **fencehole.com**:
 
 ## Safety
 
-All HQ agents are sandboxed and static: no external actions, no email, no
-payments, no deploys. The `isActionAllowed()` gate is hard-coded to `false`
-until Chris reviews and enables permissions. Nessie can only plan, draft,
-summarize, and route — her system prompt enforces the same hard rules and
-she flags (never performs) any request that needs your approval.
+Talking to Nessie directly (WhatsApp, `/hq/nessie`) is always on — that's just
+a conversation with Chris. Anything that would leave the building — a reply to
+a client/brand, a posted marketplace listing, published content — gets drafted
+and queued in `/hq/approvals` instead of sent. `isActionAllowed()` in
+`lib/hq/agents/safety.ts` stays `false` (no auto-send/auto-spend) until Chris
+explicitly flips it on for a specific integration. No payments, no vet
+diagnosis, no exposing secrets — ever, regardless of that flag.
