@@ -1,8 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#08080f;color:#f0f0f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+.font-display{font-family:'Cinzel','Georgia',serif;letter-spacing:.06em}
+.hq-bg{background:radial-gradient(ellipse 70% 45% at 50% -5%,rgba(240,180,41,0.10),transparent 60%),#0a0a0f}
+.emblem-ring{border-radius:50%;box-shadow:0 0 0 1px rgba(240,180,41,.35),0 0 30px rgba(240,180,41,.18),0 0 70px rgba(240,180,41,.10)}
+.gold-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(240,180,41,.5),transparent)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:#08080f}
 ::-webkit-scrollbar-thumb{background:#44445a;border-radius:3px}

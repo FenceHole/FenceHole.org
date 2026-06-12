@@ -44,16 +44,19 @@ export default function NessiePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col gap-6">
+    <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col gap-8">
       <div>
         <Link href="/hq" className="text-xs text-amber-400/70 hover:text-amber-300">
           ← Back to Command Center
         </Link>
-        <h1 className="text-xl font-semibold text-white mt-2">Nessie — Chief of Staff</h1>
-        <p className="text-sm text-white/50 mt-1">
-          Your Donna. Give her a deal to assess, a day to plan, a mess to organize, or a
-          draft to write. She decides, you approve — nothing leaves the building without you.
-        </p>
+      </div>
+
+      <div className="flex flex-col items-center text-center gap-4">
+        <div className="emblem-ring w-24 h-24 sm:w-28 sm:h-28 overflow-hidden bg-black/40">
+          <img src="/nessie-emblem.jpg" alt="Nessie" className="w-full h-full object-cover" />
+        </div>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold text-amber-200">NESSIE</h1>
+        <div className="gold-divider w-20" />
       </div>
 
       <form onSubmit={ask} className="flex flex-col gap-3">
@@ -85,8 +88,9 @@ export default function NessiePage() {
       )}
 
       {reply && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col gap-3">
+        <div className="rounded-xl border border-amber-400/15 bg-white/[0.03] p-4 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="font-display text-amber-300/80 tracking-widest text-[10px]">NESSIE</span>
             <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-semibold text-amber-300">
               {tier ? TIER_LABEL[tier] ?? tier : ''}
             </span>

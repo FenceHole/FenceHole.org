@@ -7,7 +7,8 @@ const NAV=[
   {href:'/hub/crm',label:'CRM',icon:'🤝'},
   {href:'/hub/brands',label:'Brands',icon:'📦'},
   {href:'/hub/content',label:'Content',icon:'✍️'},
-  {href:'/hq',label:'HQ / AI Agents',icon:'🤖'},
+  {href:'/hq',label:'HQ / AI Agents',icon:'⊕'},
+  {href:'/hq/nessie',label:'Nessie',icon:'/nessie-emblem.jpg'},
   {href:'/client',label:'Client Portal',icon:'👤'},
   {href:'/account/security',label:'Security',icon:'🔒'},
 ]
@@ -23,9 +24,12 @@ export default function Sidebar({userName}:{userName:string}) {
       </div>
       <nav style={{flex:1,padding:'12px 12px',display:'flex',flexDirection:'column',gap:2}}>
         {NAV.map(item=>{
-          const active=item.href==='/hub'?pathname==='/hub':pathname.startsWith(item.href)
+          const active=item.href==='/hub'||item.href==='/hq'?pathname===item.href:pathname.startsWith(item.href)
           return<Link key={item.href} href={item.href} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',borderRadius:8,color:active?'#f0f0f4':'#8888aa',background:active?'#16162a':'transparent',fontWeight:active?600:400,fontSize:14,textDecoration:'none'}}>
-            <span>{item.icon}</span><span>{item.label}</span>
+            {item.icon.startsWith('/')
+              ? <img src={item.icon} alt="" style={{width:18,height:18,borderRadius:'50%',objectFit:'cover',boxShadow:active?'0 0 0 1px rgba(240,180,41,.5)':'none'}}/>
+              : <span>{item.icon}</span>}
+            <span>{item.label}</span>
           </Link>
         })}
       </nav>

@@ -14,7 +14,7 @@ const MODULES = [
   { id: 'brain', name: 'Brain Explorer', desc: 'Browse and search second-brain memory.', href: '/hq', live: false },
   { id: 'obsidian', name: 'Obsidian Second Brain', desc: 'Read-only vault index — the memory source of truth.', href: '/hq', live: false },
   { id: 'ai-router', name: 'AI Router', desc: 'Routes tasks to the cheapest safe model (Qwen/Claude).', href: '/hq/nessie', live: true },
-  { id: 'nessie', name: 'Nessie — Chief of Staff', desc: 'Your Donna. Lead agent: assesses, plans, drafts, decides.', href: '/hq/nessie', live: true },
+  { id: 'nessie', name: 'Nessie', desc: 'Give her a deal to assess, a day to plan, a mess to organize, or a draft to write.', href: '/hq/nessie', live: true },
   { id: 'agents', name: 'Agent Crew', desc: '8 sandboxed agents — suggest and draft only.', href: '/hq/agents', live: true },
   { id: 'cases', name: 'Pet Care Cases', desc: 'Organize care cases toward free pet healthcare.', href: '/hq', live: false },
   { id: 'partners', name: 'Vet Partner Network', desc: 'Track potential vet partners. Drafts only.', href: '/hq', live: false },
@@ -40,8 +40,9 @@ export default function HQPage() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="mb-8">
           <p className="text-xs font-semibold tracking-[0.2em] text-amber-400/80 uppercase mb-2">FenceHole HQ</p>
-          <h1 className="text-3xl font-bold">Command Center</h1>
-          <p className="text-white/50 mt-2 max-w-2xl text-sm leading-relaxed">
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-amber-100">Command Center</h1>
+          <div className="gold-divider w-16 mt-3 mb-4" />
+          <p className="text-white/50 max-w-2xl text-sm leading-relaxed">
             Private, local-first operating dashboard for the mission: bringing free pet healthcare to life.
             Obsidian is memory. Hermes coordinates. The router keeps it cheap. Humans approve anything external.
           </p>
