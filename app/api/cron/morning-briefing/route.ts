@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callOpenRouter } from '@/lib/hq/agents/llm'
+import { MODEL_TIERS } from '@/lib/hq/agents/router'
 import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
 import { sendWhatsApp } from '@/lib/integrations/twilio'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -45,7 +46,7 @@ Structure your reply as:
 2) Anything waiting on Chris (approvals/decisions)
 3) One thing you'd flag that he might be missing`
 
-  const result = await callOpenRouter('anthropic/claude-3.5-haiku', NESSIE_SYSTEM_PROMPT, prompt)
+  const result = await callOpenRouter(MODEL_TIERS.complex.id, NESSIE_SYSTEM_PROMPT, prompt)
 
   const to = process.env.CHRIS_WHATSAPP_NUMBER
   if (to) await sendWhatsApp(to, `☀️ Morning briefing — ${today}\n\n${result.content}`)

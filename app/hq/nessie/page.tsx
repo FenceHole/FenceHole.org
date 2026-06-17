@@ -6,7 +6,7 @@ import Link from 'next/link'
 const TIER_LABEL: Record<string, string> = {
   simple: 'Qwen 2.5 7B (cheap)',
   standard: 'Qwen 2.5 72B',
-  complex: 'Claude 3.5 Haiku',
+  complex: 'GLM 5.2',
 }
 
 export default function NessiePage() {

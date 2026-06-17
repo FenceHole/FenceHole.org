@@ -1,5 +1,5 @@
 // AI Router: picks the cheapest model that can safely handle a task.
-// Qwen models cover the cheap/standard tiers; Claude is reserved for
+// Qwen models cover the cheap/standard tiers; GLM 5.2 is reserved for
 // tasks that need stronger reasoning (planning, decomposition, strategy).
 
 export type TaskComplexity = 'simple' | 'standard' | 'complex'
@@ -25,10 +25,10 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
     approxCostPer1kTokens: 0.0009,
   },
   complex: {
-    id: 'anthropic/claude-3.5-haiku',
-    label: 'Claude 3.5 Haiku',
+    id: 'z-ai/glm-5.2',
+    label: 'GLM 5.2',
     tier: 'complex',
-    approxCostPer1kTokens: 0.0025,
+    approxCostPer1kTokens: 0.0029,
   },
 }
 
