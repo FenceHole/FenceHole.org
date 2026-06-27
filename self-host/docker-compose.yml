@@ -1,0 +1,32 @@
+# FenceHole Hub — self-hosted stack.
+#
+# This brings up TWO things on your own server:
+#   1. The full Supabase stack (Postgres + Auth + Studio + API gateway),
+#      pulled into ./supabase by setup.sh
+#   2. The FenceHole Hub app itself (built from the repo)
+#
+# Run everything with:  docker compose up -d --build
+# See README-SELFHOST.md for the full walkthrough.
+
+include:
+  # The official Supabase self-hosting stack. setup.sh clones it here.
+  - ./supabase/docker-compose.yml
+
+services:
+  hub:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* are baked at build time — must match .env below.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - kong   # the Supabase API gateway; defined in the included compose
+    networks:
+      - default

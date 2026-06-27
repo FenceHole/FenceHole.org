@@ -6,3 +6,6 @@ node_modules/
 *.log
 out/
 .DS_Store
+self-host/volumes/
+self-host/supabase/
+self-host/.env
