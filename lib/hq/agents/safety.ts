@@ -16,10 +16,10 @@ export const AGENT_SAFETY_GATES: SafetyGate[] = [
     blocksAction: true,
   },
   {
-    id: 'no-email-yet',
-    label: 'Email — Not Yet Connected',
-    description: 'No email integration is wired up yet. Until it is, agents cannot read or send email.',
-    blocksAction: true,
+    id: 'email-draft-only',
+    label: 'Email — Read & Draft Only',
+    description: 'Once a team member connects Google, agents can read email and draft replies, but sending waits for an approved draft in /hq/approvals.',
+    blocksAction: false,
   },
   {
     id: 'no-cloud-sync',
