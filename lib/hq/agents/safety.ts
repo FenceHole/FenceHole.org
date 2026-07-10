@@ -6,7 +6,7 @@ export const AGENT_SAFETY_GATES: SafetyGate[] = [
   {
     id: 'approval-required-to-send',
     label: 'Approval Required to Send',
-    description: 'Agents can chat directly with Chris (WhatsApp, Hub) and draft outward-facing replies, listings, and posts — but anything that leaves the building waits in /hq/approvals for his sign-off.',
+    description: 'Agents can chat directly with Chris (WhatsApp, Hub) and draft outward-facing replies and posts — but anything that leaves the building waits in /hq/approvals for his sign-off.',
     blocksAction: false,
   },
   {

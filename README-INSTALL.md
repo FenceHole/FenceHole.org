@@ -61,8 +61,8 @@ public portfolio site at that domain. The portfolio site has been moved to
 
 ## How to talk to Nessie on WhatsApp (~15 minutes)
 
-This wires up text, voice notes, and photos (snap a photo → Nessie estimates
-its value and drafts a marketplace listing for /hq/approvals).
+This wires up text and voice notes (auto-transcribed). Photos/marketplace
+listings are intentionally NOT part of the Hub — that's a separate app.
 
 1. **Service role key** (so the webhook/cron jobs can read & write memory):
    Supabase → **Settings → API** → copy the `service_role` key → add to
@@ -86,8 +86,7 @@ its value and drafts a marketplace listing for /hq/approvals).
    COMES IN" to:
    `https://fencehole.org/api/whatsapp/webhook` (method: POST).
 5. Redeploy after adding the env vars. Text the Twilio sandbox number on
-   WhatsApp — Nessie replies. Send a photo of something to sell to see the
-   marketplace-listing flow.
+   WhatsApp — Nessie replies. Send a voice note to see transcription.
 
 > Note: the Twilio sandbox requires each phone to re-join every 72 hours by
 > texting the join code again. For a permanent number with no rejoin step,
@@ -125,7 +124,7 @@ site. To put it live at **fencehole.com**:
 
 Talking to Nessie directly (WhatsApp, `/hq/nessie`) is always on — that's just
 a conversation with Chris. Anything that would leave the building — a reply to
-a client/brand, a posted marketplace listing, published content — gets drafted
+a client/brand, published content — gets drafted
 and queued in `/hq/approvals` instead of sent. `isActionAllowed()` in
 `lib/hq/agents/safety.ts` stays `false` (no auto-send/auto-spend) until Chris
 explicitly flips it on for a specific integration. No payments, no vet

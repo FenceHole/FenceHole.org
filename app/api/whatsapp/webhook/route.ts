@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pickModel } from '@/lib/hq/agents/router'
-import { callOpenRouter, callOpenRouterVision, transcribeAudio, VISION_MODEL } from '@/lib/hq/agents/llm'
+import { callOpenRouter, transcribeAudio } from '@/lib/hq/agents/llm'
 import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
 import { fetchTwilioMedia } from '@/lib/integrations/twilio'
-import { recallMemory, remember, logMessage, getConversationHistory, queueDraft } from '@/lib/hq/agents/memory'
+import { recallMemory, remember, logMessage, getConversationHistory } from '@/lib/hq/agents/memory'
 
 const AGENT_ID = 'nessie-chief-of-staff'
 const ALLOWED = (process.env.WHATSAPP_ALLOWED_NUMBERS ?? '')
@@ -33,14 +33,17 @@ export async function POST(req: NextRequest) {
       const mediaType = String(form.get('MediaContentType0') ?? '')
       const mediaUrl = String(form.get('MediaUrl0') ?? '')
 
-      if (mediaType.startsWith('image/')) {
-        return await handleImage(from, mediaUrl, mediaType)
-      }
-
       if (mediaType.startsWith('audio/')) {
         const { buffer } = await fetchTwilioMedia(mediaUrl)
         const transcript = await transcribeAudio(buffer, mediaType)
         return await handleText(from, transcript || body)
+      }
+
+      // Photos/other media aren't handled by the Hub — marketplace listings
+      // live in a separate freestanding app. Fall through to text if there's
+      // a caption, otherwise say so.
+      if (!body) {
+        return twiml("I don't handle photos here — that lives in the separate marketplace app. Send me a message and I've got you.")
       }
     }
 
@@ -48,27 +51,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return twiml(`Nessie hit a snag: ${err instanceof Error ? err.message : 'unknown error'}`)
   }
-}
-
-async function handleImage(from: string, mediaUrl: string, mediaType: string) {
-  const { buffer } = await fetchTwilioMedia(mediaUrl)
-  const dataUrl = `data:${mediaType};base64,${Buffer.from(buffer).toString('base64')}`
-
-  const prompt = `Chris sent this photo of an item he wants to sell. Respond in exactly this format:
-ITEM: <short name of the item>
-ESTIMATED VALUE: $X-$Y (fair used marketplace price)
-TITLE: <listing title, under 60 chars>
-DESCRIPTION: <2-4 sentence Facebook Marketplace / OfferUp listing in Chris's voice — friendly, direct, no fluff>`
-
-  const result = await callOpenRouterVision(VISION_MODEL, NESSIE_SYSTEM_PROMPT, prompt, dataUrl)
-  const itemMatch = result.content.match(/ITEM:\s*(.+)/i)
-  const title = itemMatch ? `For sale: ${itemMatch[1].trim()}` : 'New marketplace listing'
-
-  await queueDraft('marketplace_listing', title, result.content, {}, 'whatsapp', from, mediaUrl)
-  await logMessage(AGENT_ID, 'whatsapp', from, 'user', '[photo]', mediaUrl)
-  await logMessage(AGENT_ID, 'whatsapp', from, 'assistant', result.content)
-
-  return twiml(`Got it. Here's the draft:\n\n${result.content}\n\nQueued in /hq/approvals — approve it and it's ready to post.`)
 }
 
 async function handleText(from: string, text: string) {
