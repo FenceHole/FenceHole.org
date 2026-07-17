@@ -1,0 +1,13 @@
+{
+  "name": "nessie-orb",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nessie as a floating always-on-top companion window",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "latest"
+  }
+}
