@@ -1,45 +1,84 @@
-// AI Router: picks the cheapest model that can safely handle a task.
-// Qwen models cover the cheap/standard tiers; GLM 5.2 is reserved for
-// tasks that need stronger reasoning (planning, decomposition, strategy).
+// AI Router — OpenClaw body, Hermes voice, DeepSeek harness, two Qwen3-8B
+// workers. Picks the cheapest path that can safely handle a task.
+// Full architecture: nessie/HARNESS.md
 
 export type TaskComplexity = 'simple' | 'standard' | 'complex'
+
+/** The four roles in the pipeline. */
+export type ModelRole = 'voice' | 'harness' | 'worker'
 
 export interface ModelChoice {
   id: string
   label: string
+  role: ModelRole
   tier: TaskComplexity
   approxCostPer1kTokens: number
 }
 
+// Model IDs are env-overridable so a model can be swapped without a deploy.
+// Verify slugs against https://openrouter.ai/models before changing defaults.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
+const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-r1'
+const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
+
 export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
+  // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
-    id: 'qwen/qwen-2.5-7b-instruct',
-    label: 'Qwen 2.5 7B (cheap)',
+    id: VOICE_MODEL,
+    label: 'Hermes (voice)',
+    role: 'voice',
     tier: 'simple',
+    approxCostPer1kTokens: 0.0004,
+  },
+  // Standard path — the Qwen workers handle triage and drafting.
+  standard: {
+    id: WORKER_MODEL,
+    label: 'Qwen3 8B (worker)',
+    role: 'worker',
+    tier: 'standard',
     approxCostPer1kTokens: 0.0001,
   },
-  standard: {
-    id: 'qwen/qwen-2.5-72b-instruct',
-    label: 'Qwen 2.5 72B',
-    tier: 'standard',
-    approxCostPer1kTokens: 0.0009,
-  },
+  // Full path — anything carrying a judgment goes through the harness.
   complex: {
-    id: 'z-ai/glm-5.2',
-    label: 'GLM 5.2',
+    id: HARNESS_MODEL,
+    label: 'DeepSeek (harness)',
+    role: 'harness',
     tier: 'complex',
-    approxCostPer1kTokens: 0.0029,
+    approxCostPer1kTokens: 0.0022,
   },
 }
 
-const COMPLEX_SIGNALS = /plan|decompose|strategy|architecture|multi-step|coordinate/i
+/** The two Qwen3-8B workers: same model, two jobs, run independently. */
+export const WORKERS = {
+  scout: { id: WORKER_MODEL, label: 'Qwen3 8B · Scout', role: 'worker' as const },
+  scribe: { id: WORKER_MODEL, label: 'Qwen3 8B · Scribe', role: 'worker' as const },
+} as const
+
+export type WorkerName = keyof typeof WORKERS
+
+// Anything asking for a decision, a plan, or a verdict needs the harness.
+const COMPLEX_SIGNALS =
+  /plan|decompose|strategy|architecture|multi-step|coordinate|decide|should i|worth it|counter|negotiat|priorit/i
+
+// Pure chat that doesn't need a worker at all.
+const QUICK_SIGNALS = /^(hey|hi|hello|thanks|thank you|yes|no|ok|okay|got it|morning|night)\b/i
 
 export function classifyTask(input: string): TaskComplexity {
-  if (COMPLEX_SIGNALS.test(input) || input.length > 600) return 'complex'
-  if (input.length > 150) return 'standard'
+  const text = input.trim()
+  if (COMPLEX_SIGNALS.test(text) || text.length > 600) return 'complex'
+  if (QUICK_SIGNALS.test(text) && text.length < 60) return 'simple'
+  if (text.length > 150) return 'standard'
   return 'simple'
 }
 
 export function pickModel(input: string): ModelChoice {
   return MODEL_TIERS[classifyTask(input)]
+}
+
+/** Which stages a given input should run through once the pipeline is chained. */
+export function pipelineFor(input: string): Array<'scout' | 'harness' | 'scribe' | 'voice'> {
+  const tier = classifyTask(input)
+  if (tier === 'complex') return ['scout', 'harness', 'scribe', 'voice']
+  if (tier === 'standard') return ['scout', 'scribe', 'voice']
+  return ['voice']
 }
