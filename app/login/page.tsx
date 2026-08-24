@@ -61,7 +61,13 @@ export default function LoginPage() {
         {!needsMfa ? (
           <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:16}}>
             <div><label className="label">Email</label><input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@fencehole.com" required/></div>
-            <div><label className="label">Password</label><input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required/></div>
+            <div>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}>
+                <label className="label">Password</label>
+                <Link href="/reset" style={{fontSize:11,color:'#8888aa',textDecoration:'none'}}>Forgot?</Link>
+              </div>
+              <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required/>
+            </div>
             {error&&<div style={{color:'#fb7185',background:'rgba(251,113,133,0.08)',padding:12,borderRadius:8,fontSize:13}}>{error}</div>}
             <button type="submit" className="btn-primary" disabled={loading}>{loading?'Entering…':'Enter the Hub'}</button>
             <Link href="/request-access" style={{textAlign:'center',fontSize:13,color:'#44445a'}}>Not on the team? Request access →</Link>
