@@ -6,6 +6,9 @@ import { recallMemory, logMessage } from '@/lib/hq/agents/memory'
 
 const AGENT_ID = 'nessie-chief-of-staff'
 
+// The agentic loop makes several model calls; give it room.
+export const maxDuration = 300
+
 function authorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret) return true

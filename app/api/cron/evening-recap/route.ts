@@ -8,6 +8,8 @@ import { recallMemory, logMessage } from '@/lib/hq/agents/memory'
 
 const AGENT_ID = 'nessie-chief-of-staff'
 
+export const maxDuration = 300
+
 function authorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret) return true
