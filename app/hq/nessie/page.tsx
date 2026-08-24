@@ -14,6 +14,7 @@ export default function NessiePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reply, setReply] = useState<string | null>(null)
+  const [actions, setActions] = useState<{ tool: string }[]>([])
   const [tier, setTier] = useState<string | null>(null)
   const [model, setModel] = useState<string | null>(null)
   const [usage, setUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number } | null>(null)
@@ -39,6 +40,7 @@ export default function NessiePage() {
     setLoading(true)
     setError(null)
     setReply(null)
+    setActions([])
     try {
       const res = await fetch('/api/hq/nessie', {
         method: 'POST',
@@ -48,6 +50,7 @@ export default function NessiePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Request failed')
       setReply(data.reply)
+      setActions(data.actions ?? [])
       setTier(data.tier)
       setModel(data.model)
       setUsage(data.usage ?? null)
@@ -184,6 +187,16 @@ export default function NessiePage() {
               </span>
             )}
           </div>
+          {actions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span className="text-white/30 tracking-widest">DID</span>
+              {actions.map((a, i) => (
+                <span key={i} className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-white/55">
+                  {a.tool}
+                </span>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{reply}</p>
         </div>
       )}

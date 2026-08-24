@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { callOpenRouter } from '@/lib/hq/agents/llm'
-import { MODEL_TIERS } from '@/lib/hq/agents/router'
-import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
+import { runNessie } from '@/lib/hq/agents/loop'
 import { sendWhatsApp } from '@/lib/integrations/twilio'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { recallMemory, logMessage } from '@/lib/hq/agents/memory'
@@ -46,11 +44,19 @@ Structure your reply as:
 2) Anything waiting on Chris (approvals/decisions)
 3) One thing you'd flag that he might be missing`
 
-  const result = await callOpenRouter(MODEL_TIERS.complex.id, NESSIE_SYSTEM_PROMPT, prompt)
+  // Run through the agentic loop: the curated summary above is her starting
+  // point, and she can pull more detail with her own tools if she needs it.
+  const result = await runNessie(prompt)
 
   const to = process.env.CHRIS_WHATSAPP_NUMBER
-  if (to) await sendWhatsApp(to, `☀️ Morning briefing — ${today}\n\n${result.content}`)
-  await logMessage(AGENT_ID, 'whatsapp', to ?? 'system', 'assistant', result.content)
+  if (to) await sendWhatsApp(to, `☀️ Morning briefing — ${today}\n\n${result.reply}`)
+  await logMessage(AGENT_ID, 'whatsapp', to ?? 'system', 'assistant', result.reply)
 
-  return NextResponse.json({ ok: true, sent: !!to, briefing: result.content })
+  return NextResponse.json({
+    ok: true,
+    sent: !!to,
+    briefing: result.reply,
+    steps: result.steps,
+    actions: result.trace.map((t) => t.tool),
+  })
 }

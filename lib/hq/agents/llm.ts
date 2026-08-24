@@ -171,3 +171,64 @@ export async function transcribeAudio(buffer: ArrayBuffer, contentType: string):
   const data = await res.json()
   return data.text ?? ''
 }
+
+// --- Tool-calling ------------------------------------------------------
+// OpenRouter speaks the OpenAI chat format, so tools and tool results are
+// passed through as-is. Used by the agentic loop in loop.ts.
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | null
+  tool_calls?: ToolCall[]
+  tool_call_id?: string
+  name?: string
+}
+
+export interface ToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+export interface ChatResult {
+  message: ChatMessage
+  model: string
+  usage?: LLMUsage
+}
+
+export async function chatWithTools(
+  model: string,
+  messages: ChatMessage[],
+  tools: unknown[]
+): Promise<ChatResult> {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    throw new Error(
+      'OPENROUTER_API_KEY is not configured — Nessie has no brain connected. ' +
+      'Add it in Vercel under Settings > Environment Variables (Production).'
+    )
+  }
+
+  const send = (m: string) =>
+    fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: m, messages, tools, tool_choice: 'auto' }),
+    })
+
+  let res = await send(model)
+
+  const fallback = process.env.NESSIE_MODEL_FALLBACK
+  if (!res.ok && fallback && fallback !== model && (res.status === 402 || res.status === 404)) {
+    res = await send(fallback)
+  }
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(explainOpenRouterError(res.status, text))
+  }
+
+  const data = await res.json()
+  const choice = data.choices?.[0]?.message ?? { role: 'assistant', content: '' }
+  return { message: choice as ChatMessage, model: data.model ?? model, usage: data.usage }
+}
