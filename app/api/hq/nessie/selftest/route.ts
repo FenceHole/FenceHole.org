@@ -23,8 +23,13 @@ const PROBE_TOOL = [
   },
 ]
 
-export async function GET() {
-  const tiers = Object.entries(MODEL_TIERS)
+export async function GET(req: Request) {
+  // ?model=a,b,c probes specific slugs instead of the configured tiers —
+  // used to find a working id when OpenRouter's catalog has moved.
+  const probe = new URL(req.url).searchParams.get('model')
+  const tiers: [string, { id: string }][] = probe
+    ? probe.split(',').map((id) => [id.trim(), { id: id.trim() }])
+    : Object.entries(MODEL_TIERS)
 
   const results = await Promise.all(
     tiers.map(async ([tier, choice]) => {
