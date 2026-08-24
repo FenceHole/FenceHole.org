@@ -16,8 +16,14 @@ export interface ModelChoice {
 }
 
 // Model IDs are env-overridable so a model can be swapped without a deploy.
-// Verify slugs against https://openrouter.ai/models before changing defaults.
-const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
+// Every default below has been confirmed working against OpenRouter by
+// GET /api/hq/nessie/selftest — do not change one without re-running it.
+//
+// The voice tier is meant to be a Hermes-class model (see nessie/HARNESS.md),
+// but 'nousresearch/hermes-4-70b' was rejected by OpenRouter as an unknown id.
+// Rather than leave the tier broken, it falls back to the verified worker
+// model; set NESSIE_MODEL_VOICE to a real Hermes slug to restore the intent.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'qwen/qwen3-8b'
 const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-r1'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
 
@@ -25,7 +31,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
     id: VOICE_MODEL,
-    label: 'Hermes (voice)',
+    label: 'Voice tier',
     role: 'voice',
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,
