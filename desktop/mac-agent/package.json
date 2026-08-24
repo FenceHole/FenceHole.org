@@ -1,0 +1,10 @@
+{
+  "name": "nessie-mac-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lets Nessie act on this Mac, one approved command at a time",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js"
+  }
+}

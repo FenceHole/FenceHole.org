@@ -59,6 +59,25 @@ export const NESSIE_TOOLS: ToolDef[] = [
   }, ['title']),
 
   tool(
+    'request_mac_action',
+    "Ask to do something on Chris's Mac. Like queue_draft, this only REQUESTS — " +
+    'the command waits for him to approve it in the Hub, and the Mac agent has to be ' +
+    'running. Use it for opening things, notifications, and reading or writing files ' +
+    'in his Nessie folders. Tell him it is waiting for approval.',
+    {
+      kind: str('notify, open_url, open_app, read_file or write_file.'),
+      payload: {
+        type: 'object',
+        description:
+          'notify: {title,text} · open_url: {url} · open_app: {app} · ' +
+          'read_file: {path} · write_file: {path,content}',
+      },
+      reason: str('One line: why you want this. Chris sees it when approving.'),
+    },
+    ['kind', 'payload']
+  ),
+
+  tool(
     'queue_draft',
     'Queue anything outward-facing for Chris to approve. This is the ONLY way to produce ' +
     'an email, reply, post, listing or proposal — it is saved for sign-off and is never sent. ' +
@@ -161,6 +180,29 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
       const { error } = await sb.from('content_ideas')
         .insert({ title, notes: args.notes ? String(args.notes) : null })
       return error ? { error: error.message } : { ok: true, added: title }
+    }
+
+    case 'request_mac_action': {
+      const kind = String(args.kind ?? '')
+      const allowed = ['notify', 'open_url', 'open_app', 'read_file', 'write_file']
+      if (!allowed.includes(kind)) {
+        return { error: `kind must be one of: ${allowed.join(', ')}` }
+      }
+      const payload = typeof args.payload === 'object' && args.payload !== null ? args.payload : {}
+      const { error } = await sb.from('machine_commands').insert({
+        kind,
+        payload,
+        reason: args.reason ? String(args.reason) : null,
+        status: 'pending',
+        requested_by: 'nessie',
+      })
+      return error
+        ? { error: error.message }
+        : {
+            ok: true,
+            queued: kind,
+            note: 'Waiting for Chris to approve in the Hub. NOT run yet, and it needs the Mac agent running.',
+          }
     }
 
     case 'queue_draft': {
