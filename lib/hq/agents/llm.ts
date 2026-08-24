@@ -19,10 +19,15 @@ export function explainOpenRouterError(status: number, body: string): string {
     return 'OpenRouter rejected the API key. Check OPENROUTER_API_KEY in Vercel (Production).'
   }
   if (status === 404) {
+    // A 404 here is ambiguous: either the slug is wrong, or the model exists
+    // but no provider endpoint is available to this account — most often
+    // because of the privacy/data-policy setting at
+    // https://openrouter.ai/settings/privacy. Pass the real message through
+    // rather than guessing which it is.
     return (
-      'OpenRouter does not recognise that model id. Check the slug at ' +
-      'https://openrouter.ai/models and override it with NESSIE_MODEL_VOICE, ' +
-      'NESSIE_MODEL_HARNESS, or NESSIE_MODEL_WORKER.'
+      `OpenRouter returned 404 for that model. Either the slug is wrong, or no ` +
+      `provider endpoint is available for your account's data policy ` +
+      `(https://openrouter.ai/settings/privacy). OpenRouter said: ${body.slice(0, 300)}`
     )
   }
   if (status === 429) {
