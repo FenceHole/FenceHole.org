@@ -4,7 +4,7 @@
 // Bounded by MAX_STEPS so a confused model can't spin. Every tool call is
 // recorded in the trace so Chris can see exactly what she did.
 
-import { chatWithTools, type ChatMessage } from './llm'
+import { callOpenRouter, chatWithTools, type ChatMessage } from './llm'
 import { NESSIE_TOOLS, runTool } from './tools'
 import { NESSIE_SYSTEM_PROMPT } from './nessie'
 import { MODEL_TIERS, classifyTask } from './router'
@@ -34,11 +34,20 @@ function parseArgs(raw: string): Record<string, unknown> {
 }
 
 export async function runNessie(input: string, context?: string): Promise<NessieRun> {
-  const model = MODEL_TIERS[classifyTask(input)].id
+  const tier = classifyTask(input)
+  const model = MODEL_TIERS[tier].id
+  const prompt = context ? `${context}\n\n${input}` : input
+
+  // The voice tier is small talk — no tools needed, and the Hermes-class model
+  // it uses has no tool-use endpoint. One clean call, straight in her voice.
+  if (tier === 'simple') {
+    const r = await callOpenRouter(model, NESSIE_SYSTEM_PROMPT, prompt)
+    return { reply: r.content.trim(), trace: [], model: r.model, steps: 1 }
+  }
 
   const messages: ChatMessage[] = [
     { role: 'system', content: NESSIE_SYSTEM_PROMPT },
-    { role: 'user', content: context ? `${context}\n\n${input}` : input },
+    { role: 'user', content: prompt },
   ]
 
   const trace: TraceEntry[] = []

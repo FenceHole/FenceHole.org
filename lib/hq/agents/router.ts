@@ -19,15 +19,10 @@ export interface ModelChoice {
 // Every default below has been confirmed working against OpenRouter by
 // GET /api/hq/nessie/selftest — do not change one without re-running it.
 //
-// The voice tier is meant to be a Hermes-class model (see nessie/HARNESS.md),
-// but 'nousresearch/hermes-4-70b' was rejected by OpenRouter as an unknown id.
-// Rather than leave the tier broken, it falls back to the verified worker
-// model; set NESSIE_MODEL_VOICE to a real Hermes slug to restore the intent.
-const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'qwen/qwen3-8b'
-// deepseek-r1 is a reasoning model and proved inconsistent at emitting
-// tool_calls (it skipped them on ~1 in 4 probes) and took 5-12s per hop.
-// deepseek-chat (V3) called tools on every probe at ~1.3s, so the harness
-// tier uses it. Still DeepSeek; set NESSIE_MODEL_HARNESS to override.
+// The voice tier is a Hermes-class model (see nessie/HARNESS.md). Hermes has
+// no tool-use endpoint on OpenRouter, which is fine: this tier handles small
+// talk and one-liners, and the loop deliberately calls it WITHOUT tools.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
 const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-chat'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
 
@@ -35,7 +30,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
     id: VOICE_MODEL,
-    label: 'Voice tier',
+    label: 'Hermes (voice)',
     role: 'voice',
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,

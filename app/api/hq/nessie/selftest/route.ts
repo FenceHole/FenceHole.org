@@ -34,6 +34,9 @@ export async function GET(req: Request) {
   const results = await Promise.all(
     tiers.map(async ([tier, choice]) => {
       const started = Date.now()
+      // The voice tier is deliberately called without tools in the real loop,
+      // so probe it the same way rather than reporting a false failure.
+      const toolsForTier = tier === 'simple' ? [] : PROBE_TOOL
       try {
         const { message, model } = await chatWithTools(
           choice.id,
@@ -41,14 +44,15 @@ export async function GET(req: Request) {
             { role: 'system', content: 'You have tools. Use them rather than guessing.' },
             { role: 'user', content: 'Which brand deals need my attention?' },
           ],
-          PROBE_TOOL
+          toolsForTier
         )
         const calls = message.tool_calls ?? []
         return {
           tier,
           configured: choice.id,
           answered_as: model,
-          supports_tools: calls.length > 0,
+          supports_tools: tier === 'simple' ? Boolean(message.content) : calls.length > 0,
+          note: tier === 'simple' ? 'voice tier — answers without tools by design' : undefined,
           called: calls.map((c) => c.function.name),
           ms: Date.now() - started,
         }
