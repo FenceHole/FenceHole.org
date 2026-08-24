@@ -39,3 +39,34 @@ select.input{cursor:pointer}
 @media(min-width:900px){
   .grid-3{grid-template-columns:repeat(3,1fr)}
 }
+
+/* The hole in the fence — the way in. Breathes so it can be found,
+   brightens and names itself on hover so it can't be missed. */
+.fence-hole{
+  width:22px;height:22px;border-radius:11px;background:#000;
+  border:2px solid #1a1208;
+  box-shadow:0 0 12px rgba(240,180,41,.4);
+  animation:hole-breathe 3.6s ease-in-out infinite;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+@keyframes hole-breathe{
+  0%,100%{box-shadow:0 0 10px rgba(240,180,41,.30)}
+  50%{box-shadow:0 0 22px 4px rgba(240,180,41,.55)}
+}
+.fence-hole-link:hover .fence-hole,
+.fence-hole-link:focus-visible .fence-hole{
+  transform:scale(1.35);
+  border-color:rgba(240,180,41,.5);
+  box-shadow:0 0 30px 8px rgba(240,180,41,.75),0 0 60px 16px rgba(240,180,41,.35);
+  animation:none;
+}
+.fence-hole-label{
+  position:absolute;top:26px;left:50%;transform:translateX(-50%);
+  font-family:monospace;font-size:9px;letter-spacing:2px;color:rgba(240,180,41,.9);
+  white-space:nowrap;opacity:0;transition:opacity .25s ease;pointer-events:none;
+  text-shadow:0 0 8px rgba(0,0,0,.9);
+}
+.fence-hole-link:hover .fence-hole-label,
+.fence-hole-link:focus-visible .fence-hole-label{opacity:1}
+.fence-hole-link:focus-visible{outline:none}
+@media (prefers-reduced-motion:reduce){.fence-hole{animation:none}}

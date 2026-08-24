@@ -5,6 +5,7 @@ import {useEffect,useState} from 'react'
 import {createClient} from '@/lib/supabase/client'
 const NAV=[
   {href:'/hub',label:'Dashboard',icon:'⊞'},
+  {href:'/hub/me',label:'My Desk',icon:'★'},
   {href:'/hub/chat',label:'Team Chat',icon:'💬'},
   {href:'/hub/todo',label:'Daily To-Do',icon:'✓'},
   {href:'/hub/inbox',label:'Inbox',icon:'✉️'},

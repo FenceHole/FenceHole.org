@@ -13,8 +13,9 @@ export default function FencePage() {
             {[12,30,50,70].map(t=><div key={t} style={{position:'absolute',top:`${t}%`,left:'20%',right:'15%',height:1,background:'rgba(0,0,0,0.25)'}}/>)}
             <div style={{position:'absolute',top:14,left:'50%',marginLeft:-3,width:6,height:6,borderRadius:3,background:'#555'}}/>
             <div style={{position:'absolute',bottom:14,left:'50%',marginLeft:-3,width:6,height:6,borderRadius:3,background:'#555'}}/>
-            {i===3&&<Link href="/login" style={{position:'absolute',top:'42%',left:'50%',marginLeft:-11,marginTop:-11,display:'block'}}>
-              <div style={{width:22,height:22,borderRadius:11,background:'#000',border:'2px solid #1a1208',boxShadow:'0 0 12px rgba(240,180,41,0.4)'}}/>
+            {i===3&&<Link href="/login" aria-label="Enter the Hub" className="fence-hole-link" style={{position:'absolute',top:'42%',left:'50%',marginLeft:-11,marginTop:-11,display:'block'}}>
+              <div className="fence-hole"/>
+              <span className="fence-hole-label">ENTER</span>
             </Link>}
           </div>
         ))}

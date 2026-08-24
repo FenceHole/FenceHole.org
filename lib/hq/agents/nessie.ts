@@ -6,7 +6,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 // Order matters — this is the order she reads herself in.
-const PERSONA_FILES = ['NESSIE.md', 'VOICE.md', 'SAFETY.md', 'MEMORY.md', 'CREW.md'] as const
+const PERSONA_FILES = ['NESSIE.md', 'VOICE.md', 'SELF.md', 'SAFETY.md', 'MEMORY.md', 'CREW.md'] as const
 
 // Used only if the markdown can't be read (bad deploy, missing files). Keeps
 // the hard rules intact rather than falling back to a generic assistant.

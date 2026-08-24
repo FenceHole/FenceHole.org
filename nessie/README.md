@@ -10,12 +10,13 @@ required.
 |---|---|---|
 | **`NESSIE.md`** | Who she is — identity, character, the mission, the people | ✅ |
 | **`VOICE.md`** | How she talks — tone, shape, what she never says | ✅ |
+| **`SELF.md`** | Her home, her right to edit her own files, how she holds agency | ✅ |
 | **`SAFETY.md`** | The five hard rules she can't be talked out of | ✅ |
 | **`MEMORY.md`** | What she keeps and how she uses it | ✅ |
 | **`CREW.md`** | The agents she leads | ✅ |
 | **`HARNESS.md`** | The model architecture behind her | ❌ (documentation) |
 
-The five checked files are concatenated in that order and become her system
+The checked files are concatenated in that order and become her system
 prompt on every channel — WhatsApp, the Hub, the desktop orb, and the
 scheduled briefings. One set of files, one Nessie everywhere.
 
