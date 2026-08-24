@@ -24,7 +24,11 @@ export interface ModelChoice {
 // Rather than leave the tier broken, it falls back to the verified worker
 // model; set NESSIE_MODEL_VOICE to a real Hermes slug to restore the intent.
 const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'qwen/qwen3-8b'
-const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-r1'
+// deepseek-r1 is a reasoning model and proved inconsistent at emitting
+// tool_calls (it skipped them on ~1 in 4 probes) and took 5-12s per hop.
+// deepseek-chat (V3) called tools on every probe at ~1.3s, so the harness
+// tier uses it. Still DeepSeek; set NESSIE_MODEL_HARNESS to override.
+const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-chat'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
 
 export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
@@ -47,7 +51,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Full path — anything carrying a judgment goes through the harness.
   complex: {
     id: HARNESS_MODEL,
-    label: 'DeepSeek (harness)',
+    label: 'DeepSeek V3 (harness)',
     role: 'harness',
     tier: 'complex',
     approxCostPer1kTokens: 0.0022,
