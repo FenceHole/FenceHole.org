@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pickModel } from '@/lib/hq/agents/router'
 import { callOpenRouter, transcribeAudio } from '@/lib/hq/agents/llm'
 import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
 import { fetchTwilioMedia } from '@/lib/integrations/twilio'
-import { recallMemory, remember, logMessage, getConversationHistory } from '@/lib/hq/agents/memory'
+import { runNessie } from '@/lib/hq/agents/loop'
 
-const AGENT_ID = 'nessie-chief-of-staff'
 const ALLOWED = (process.env.WHATSAPP_ALLOWED_NUMBERS ?? '')
   .split(',')
   .map((s) => s.trim())
@@ -56,29 +54,14 @@ export async function POST(req: NextRequest) {
 async function handleText(from: string, text: string) {
   if (!text) return twiml("Didn't catch that — try again?")
 
-  await logMessage(AGENT_ID, 'whatsapp', from, 'user', text)
-  const [history, memories] = await Promise.all([
-    getConversationHistory(AGENT_ID, 'whatsapp', from, 10),
-    recallMemory(AGENT_ID, 15),
-  ])
+  // One Nessie: the loop carries memory, per-number history, her tools, and
+  // the MEMORY: protocol — and logs both sides of the exchange itself.
+  // WhatsApp used to remember but had no ability to act.
+  const run = await runNessie(text, {
+    channel: 'whatsapp',
+    externalId: from,
+    framing: 'Chris just said this to you on WhatsApp. Keep it short enough to read on a phone.',
+  })
 
-  const context = [
-    memories.length ? `Things you remember about Chris's life/business:\n${memories.map((m) => `- [${m.category}] ${m.content}`).join('\n')}` : '',
-    history.length ? `Recent WhatsApp conversation:\n${history.map((h) => `${h.role === 'user' ? 'Chris' : 'Nessie'}: ${h.content}`).join('\n')}` : '',
-    `Chris just said (on WhatsApp): ${text}`,
-    `\nIf anything here is worth remembering long-term (a preference, a fact about a client/brand/pet, a recurring task), end your reply with one extra line starting "MEMORY:" summarizing it in one sentence. Only do this when it's genuinely worth keeping.`,
-  ].filter(Boolean).join('\n\n')
-
-  const model = pickModel(context)
-  const result = await callOpenRouter(model.id, NESSIE_SYSTEM_PROMPT, context)
-
-  let reply = result.content
-  const memMatch = reply.match(/\n+MEMORY:\s*(.+)$/i)
-  if (memMatch) {
-    await remember(AGENT_ID, 'whatsapp-note', memMatch[1].trim())
-    reply = reply.replace(/\n+MEMORY:\s*(.+)$/i, '').trim()
-  }
-
-  await logMessage(AGENT_ID, 'whatsapp', from, 'assistant', reply)
-  return twiml(reply)
+  return twiml(run.reply)
 }

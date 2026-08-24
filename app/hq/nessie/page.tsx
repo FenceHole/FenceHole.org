@@ -4,20 +4,26 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 const TIER_LABEL: Record<string, string> = {
-  simple: 'Qwen 2.5 7B (cheap)',
-  standard: 'Qwen 2.5 72B',
-  complex: 'GLM 5.2',
+  simple: 'Hermes · voice',
+  standard: 'Qwen3 8B · worker',
+  complex: 'DeepSeek · harness',
+}
+
+interface Turn {
+  role: 'you' | 'nessie'
+  text: string
+  actions?: { tool: string }[]
+  tier?: string
+  model?: string
+  remembered?: string | null
 }
 
 export default function NessiePage() {
   const [task, setTask] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [reply, setReply] = useState<string | null>(null)
-  const [actions, setActions] = useState<{ tool: string }[]>([])
-  const [tier, setTier] = useState<string | null>(null)
-  const [model, setModel] = useState<string | null>(null)
-  const [usage, setUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number } | null>(null)
+  const [turns, setTurns] = useState<Turn[]>([])
+  const lastReply = [...turns].reverse().find((t) => t.role === 'nessie')?.text ?? null
 
   const [listening, setListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
@@ -30,17 +36,17 @@ export default function NessiePage() {
   }, [])
 
   useEffect(() => {
-    if (!reply || !voiceOut || !('speechSynthesis' in window)) return
+    if (!lastReply || !voiceOut || !('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(reply))
-  }, [reply, voiceOut])
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(lastReply))
+  }, [lastReply, voiceOut])
 
   async function runAsk(text: string) {
     if (!text.trim()) return
     setLoading(true)
     setError(null)
-    setReply(null)
-    setActions([])
+    setTurns((prev) => [...prev, { role: 'you', text }])
+    setTask('')
     try {
       const res = await fetch('/api/hq/nessie', {
         method: 'POST',
@@ -49,11 +55,14 @@ export default function NessiePage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Request failed')
-      setReply(data.reply)
-      setActions(data.actions ?? [])
-      setTier(data.tier)
-      setModel(data.model)
-      setUsage(data.usage ?? null)
+      setTurns((prev) => [...prev, {
+        role: 'nessie',
+        text: data.reply,
+        actions: data.actions ?? [],
+        tier: data.tier,
+        model: data.model,
+        remembered: data.remembered ?? null,
+      }])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -173,31 +182,43 @@ export default function NessiePage() {
         </div>
       )}
 
-      {reply && (
-        <div className="rounded-xl border border-amber-400/15 bg-white/[0.03] p-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
-            <span className="font-display text-amber-300/80 tracking-widest text-[10px]">NESSIE</span>
-            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-semibold text-amber-300">
-              {tier ? TIER_LABEL[tier] ?? tier : ''}
-            </span>
-            {model && <span className="text-white/40">model: {model}</span>}
-            {usage && (
-              <span className="text-white/40">
-                tokens: {usage.total_tokens} ({usage.prompt_tokens} in / {usage.completion_tokens} out)
-              </span>
-            )}
-          </div>
-          {actions.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-              <span className="text-white/30 tracking-widest">DID</span>
-              {actions.map((a, i) => (
-                <span key={i} className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-white/55">
-                  {a.tool}
-                </span>
-              ))}
-            </div>
+      {turns.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {turns.map((t, i) =>
+            t.role === 'you' ? (
+              <div key={i} className="self-end max-w-[85%] rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5">
+                <p className="text-sm text-white/75 whitespace-pre-wrap leading-relaxed">{t.text}</p>
+              </div>
+            ) : (
+              <div key={i} className="rounded-xl border border-amber-400/15 bg-white/[0.03] p-4 flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className="font-display text-amber-300/80 tracking-widest text-[10px]">NESSIE</span>
+                  {t.tier && (
+                    <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 font-semibold text-amber-300">
+                      {TIER_LABEL[t.tier] ?? t.tier}
+                    </span>
+                  )}
+                  {t.model && <span className="text-white/40">{t.model}</span>}
+                </div>
+                {t.actions && t.actions.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                    <span className="text-white/30 tracking-widest">DID</span>
+                    {t.actions.map((a, j) => (
+                      <span key={j} className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-white/55">
+                        {a.tool}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{t.text}</p>
+                {t.remembered && (
+                  <p className="text-[10px] text-emerald-300/60 border-t border-white/5 pt-2">
+                    remembered: {t.remembered}
+                  </p>
+                )}
+              </div>
+            )
           )}
-          <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">{reply}</p>
         </div>
       )}
     </div>

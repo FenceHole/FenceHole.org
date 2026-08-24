@@ -49,16 +49,22 @@ export async function logMessage(
   await sb.from('agent_conversations').insert({ agent_id: agentId, channel, external_id: externalId, role, content, media_url: mediaUrl ?? null })
 }
 
-export async function getConversationHistory(agentId: string, channel: string, externalId: string, limit = 10): Promise<ConversationEntry[]> {
+export async function getConversationHistory(
+  agentId: string,
+  channel: string,
+  externalId: string | null,
+  limit = 10
+): Promise<ConversationEntry[]> {
   const sb = createAdminClient()
-  const { data } = await sb
+  let q = sb
     .from('agent_conversations')
     .select('*')
     .eq('agent_id', agentId)
     .eq('channel', channel)
-    .eq('external_id', externalId)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  // A null external id means "the one shared thread on this channel" (the web
+  // chat), rather than a per-phone-number thread as WhatsApp uses.
+  q = externalId === null ? q.is('external_id', null) : q.eq('external_id', externalId)
+  const { data } = await q.order('created_at', { ascending: false }).limit(limit)
   return (data ?? []).reverse()
 }
 

@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { pickModel } from '@/lib/hq/agents/router'
-import { callOpenRouter } from '@/lib/hq/agents/llm'
-import { NESSIE_SYSTEM_PROMPT } from '@/lib/hq/agents/nessie'
-import { recallMemory, remember } from '@/lib/hq/agents/memory'
-
-const AGENT_ID = 'nessie-chief-of-staff'
+import { runNessie } from '@/lib/hq/agents/loop'
 
 export async function POST(req: NextRequest) {
   // Only a signed-in team member can summon Nessie into the chat.
@@ -24,34 +19,32 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const [{ data: recent }, memories] = await Promise.all([
-      admin.from('team_messages').select('author_name,role,body').order('created_at', { ascending: false }).limit(12),
-      recallMemory(AGENT_ID, 12),
-    ])
+    // The visible chat log is the thread here, so recent messages are the
+    // context; memory and tools come from the loop itself.
+    const { data: recent } = await admin
+      .from('team_messages')
+      .select('author_name,role,body')
+      .order('created_at', { ascending: false })
+      .limit(12)
     const history = (recent ?? []).reverse()
 
-    const context = [
-      memories.length
-        ? `Things you remember about Chris's life/business:\n${memories.map((m) => `- [${m.category}] ${m.content}`).join('\n')}`
-        : '',
+    const framing = [
       history.length
         ? `Recent team chat:\n${history.map((h) => `${h.role === 'nessie' ? 'Nessie' : h.author_name}: ${h.body}`).join('\n')}`
         : '',
-      `${from ?? 'A teammate'} just asked you (in team chat): ${prompt}`,
-      `\nReply for the whole team to see. Keep it tight. If something here is worth remembering long-term, end with one line starting "MEMORY:".`,
+      `${from ?? 'A teammate'} just asked you this in team chat. Reply for the whole team to see — keep it tight.`,
     ].filter(Boolean).join('\n\n')
 
-    const model = pickModel(context)
-    const result = await callOpenRouter(model.id, NESSIE_SYSTEM_PROMPT, context)
+    const run = await runNessie(prompt, {
+      channel: 'team-chat',
+      externalId: null,
+      framing,
+      // The visible chat is already the history; don't replay it twice.
+      historyLimit: 0,
+    })
 
-    let reply = result.content
-    const memMatch = reply.match(/\n+MEMORY:\s*(.+)$/i)
-    if (memMatch) {
-      await remember(AGENT_ID, 'team-chat-note', memMatch[1].trim())
-      reply = reply.replace(/\n+MEMORY:\s*(.+)$/i, '').trim()
-    }
-
-    await postAsNessie(reply)
+    // runNessie already saved and stripped any MEMORY: line.
+    await postAsNessie(run.reply)
     return NextResponse.json({ ok: true })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'unknown error'
