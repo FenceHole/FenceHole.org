@@ -3,6 +3,34 @@
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+// OpenRouter failures arrive as raw JSON blobs. Chris sees these directly in
+// the Hub, so translate the ones we expect into something a human can act on.
+export function explainOpenRouterError(status: number, body: string): string {
+  if (status === 402) {
+    return (
+      'Nessie is wired up correctly, but her OpenRouter account has no credits, ' +
+      'so no model will answer. Add credits at https://openrouter.ai/settings/credits ' +
+      '(a few dollars covers months at this volume) and she starts talking immediately. ' +
+      'To run her on a free model instead, set NESSIE_MODEL_FALLBACK to a ":free" ' +
+      'model id from https://openrouter.ai/models.'
+    )
+  }
+  if (status === 401 || status === 403) {
+    return 'OpenRouter rejected the API key. Check OPENROUTER_API_KEY in Vercel (Production).'
+  }
+  if (status === 404) {
+    return (
+      'OpenRouter does not recognise that model id. Check the slug at ' +
+      'https://openrouter.ai/models and override it with NESSIE_MODEL_VOICE, ' +
+      'NESSIE_MODEL_HARNESS, or NESSIE_MODEL_WORKER.'
+    )
+  }
+  if (status === 429) {
+    return 'OpenRouter rate limit hit. Wait a moment and try again.'
+  }
+  return `OpenRouter error ${status}: ${body.slice(0, 300)}`
+}
+
 export interface LLMUsage {
   prompt_tokens: number
   completion_tokens: number
@@ -15,14 +43,13 @@ export interface LLMResult {
   usage?: LLMUsage
 }
 
-export async function callOpenRouter(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string
-): Promise<LLMResult> {
+async function postChat(model: string, systemPrompt: string, userPrompt: string) {
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY is not configured')
+    throw new Error(
+      'OPENROUTER_API_KEY is not configured — Nessie has no brain connected. ' +
+      'Add it in Vercel under Settings > Environment Variables (Production).'
+    )
   }
 
   const res = await fetch(OPENROUTER_URL, {
@@ -40,9 +67,26 @@ export async function callOpenRouter(
     }),
   })
 
+  return res
+}
+
+export async function callOpenRouter(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<LLMResult> {
+  let res = await postChat(model, systemPrompt, userPrompt)
+
+  // If the chosen model is unavailable or unaffordable, fall back to a model
+  // set in NESSIE_MODEL_FALLBACK (e.g. a ":free" id) so Nessie still answers.
+  const fallback = process.env.NESSIE_MODEL_FALLBACK
+  if (!res.ok && fallback && fallback !== model && (res.status === 402 || res.status === 404)) {
+    res = await postChat(fallback, systemPrompt, userPrompt)
+  }
+
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`OpenRouter error ${res.status}: ${text}`)
+    throw new Error(explainOpenRouterError(res.status, text))
   }
 
   const data = await res.json()
@@ -90,7 +134,7 @@ export async function callOpenRouterVision(
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`OpenRouter error ${res.status}: ${text}`)
+    throw new Error(explainOpenRouterError(res.status, text))
   }
 
   const data = await res.json()
