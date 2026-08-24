@@ -106,18 +106,40 @@ All served through OpenRouter on one `OPENROUTER_API_KEY`.
 > one has moved. A wrong slug fails loudly at call time — it does not fall back
 > silently.
 
+## What she can actually do
+
+Nessie runs a **tool-calling loop**: she calls a tool, reads the result,
+decides what to do next, and keeps going until she has an answer. Bounded at
+six steps; if she hits the ceiling she says so rather than inventing a
+conclusion. Every call is recorded and shown in the Hub.
+
+Her tools (`lib/hq/agents/tools.ts`) are split so that `SAFETY.md` is enforced
+by the toolset rather than by asking the model to behave:
+
+| Group | Tools |
+|---|---|
+| **Read** | `list_deals` `list_todos` `list_tasks` `list_contacts` `list_content` `list_pending_drafts` `recall_memory` |
+| **Internal writes** | `add_todo` `remember` `assess_deal` `add_content_idea` |
+| **Requests only** | `queue_draft` (→ `/hq/approvals`) · `request_mac_action` (→ the Mac agent) |
+
+There is deliberately **no tool that sends, posts, publishes, or spends.** The
+worst case is an unwanted draft sitting in a queue.
+
 ## Implementation status — read this honestly
 
 | Piece | State |
 |---|---|
-| Persona files as the live system prompt | **Implemented** — loaded by `lib/hq/agents/persona.ts` |
+| Persona files as the live system prompt | **Implemented** — `lib/hq/agents/nessie.ts` |
 | Three-path router + env-overridable model IDs | **Implemented** — `lib/hq/agents/router.ts` |
 | One brain across WhatsApp / Hub / orb / cron | **Implemented** — shared prompt + `agent_memory` |
-| Multi-hop pipeline (Scout → DeepSeek → Scribe → Hermes chained in one turn) | **Not yet** — today each request makes one call to the model its path selects. The stage prompts below are the spec for that build. |
+| Agentic tool loop with the approval gate in code | **Implemented** — `lib/hq/agents/loop.ts`, `tools.ts` |
+| Hands on the Mac, one approved command at a time | **Implemented** — `desktop/mac-agent/`, needs install + token |
+| Scout → DeepSeek → Scribe → Hermes chained as four distinct stages | **Not built** — the loop uses one model per request, chosen by tier, and lets it call tools repeatedly. That turned out to matter more than staging four models, so it was built first. The stage prompts below remain the spec if the split is ever worth doing. |
 
-That last row is the honest gap: the roles, prompts, and routing are real and
-live, but chaining all four in a single turn is the next build, not something
-running today.
+Tool-calling depends on the model actually emitting `tool_calls`, and reasoning
+models are inconsistent about it. `GET /api/hq/nessie/selftest` probes every
+tier and reports which ones work, so a silent failure surfaces as a diagnosis
+instead of as Nessie quietly behaving oddly.
 
 ## Stage prompts
 
