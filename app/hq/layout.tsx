@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import NessieDock from '@/components/NessieDock'
 
 export default function HQLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function HQLayout({ children }: { children: React.ReactNode }) {
         </Link>
       </div>
       {children}
+      <NessieDock />
     </div>
   )
 }

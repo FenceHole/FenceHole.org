@@ -22,10 +22,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const who = profile?.full_name?.split(' ')[0] ?? 'Chris'
+    // The dock passes which page they're on, so "what should I do here?" means
+    // something specific rather than something generic.
+    const room = typeof body?.room === 'string' ? body.room.slice(0, 120) : null
     const run = await runNessie(task, {
       channel: 'web',
       externalId: null,
-      framing: `${who} is talking to you in the Hub.`,
+      framing: room
+        ? `${who} is talking to you from ${room} in the Hub.`
+        : `${who} is talking to you in the Hub.`,
     })
 
     return NextResponse.json({

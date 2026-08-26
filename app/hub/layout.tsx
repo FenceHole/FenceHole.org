@@ -1,6 +1,7 @@
 import {redirect} from 'next/navigation'
 import {createClient} from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
+import NessieDock from '@/components/NessieDock'
 export default async function HubLayout({children}:{children:React.ReactNode}) {
   const sb=await createClient()
   const {data:{user}}=await sb.auth.getUser()
@@ -11,6 +12,7 @@ export default async function HubLayout({children}:{children:React.ReactNode}) {
     <div className="hq-bg" style={{display:'flex',minHeight:'100vh'}}>
       <Sidebar userName={p?.full_name?.split(' ')[0]??'Team'}/>
       <main className="pt-14 md:pt-0 md:ml-[220px]" style={{flex:1,overflowY:'auto'}}>{children}</main>
+      <NessieDock/>
     </div>
   )
 }
