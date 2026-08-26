@@ -12,8 +12,9 @@
 import { callOpenRouter, chatWithTools, type ChatMessage } from './llm'
 import { NESSIE_TOOLS, runTool } from './tools'
 import { NESSIE_SYSTEM_PROMPT } from './nessie'
-import { MODEL_TIERS, classifyTask } from './router'
+import { classifyTask } from './router'
 import { recallMemory, remember, logMessage, getConversationHistory } from './memory'
+import { resolveModel } from './settings'
 
 const MAX_STEPS = 6
 export const AGENT_ID = 'nessie-chief-of-staff'
@@ -81,9 +82,10 @@ export async function runNessie(input: string, opts: RunOptions = {}): Promise<N
   } = opts
 
   const tier = classifyTask(input)
-  const model = MODEL_TIERS[tier].id
 
-  const [memories, history] = await Promise.all([
+  const [model, memories, history] = await Promise.all([
+    // A Hub override wins over the env default, so a model can be swapped live.
+    resolveModel(tier),
     recallMemory(AGENT_ID, 15).catch(() => []),
     getConversationHistory(AGENT_ID, channel, externalId, historyLimit).catch(() => []),
   ])
