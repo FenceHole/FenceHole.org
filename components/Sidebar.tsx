@@ -13,6 +13,7 @@ const NAV=[
   {href:'/hub/crm',label:'CRM',icon:'🤝'},
   {href:'/hub/brands',label:'Brands',icon:'📦'},
   {href:'/hub/content',label:'Content',icon:'✍️'},
+  {href:'/hub/studio',label:'Studio · Go Live',icon:'⏺'},
   {href:'/hq',label:'HQ / AI Agents',icon:'⊕'},
   {href:'/hq/nessie',label:'Nessie',icon:'/nessie-emblem.jpg'},
   {href:'/hq/models',label:"Nessie's Brain",icon:'◈'},
