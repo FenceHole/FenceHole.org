@@ -12,6 +12,8 @@ export default function SecurityPage(){
   const [factorId,setFactorId]=useState('')
   const [code,setCode]=useState('')
   const [error,setError]=useState('')
+  const [faceLocked,setFaceLocked]=useState<boolean|null>(null)
+  const [locking,setLocking]=useState(false)
 
   async function refresh(){
     const sb=createClient()
@@ -20,7 +22,20 @@ export default function SecurityPage(){
     setFactor(totp?{id:totp.id}:null)
     setLoading(false)
   }
-  useEffect(()=>{refresh()},[])
+  async function refreshCamera(){
+    const res=await fetch('/api/call/policy')
+    if(res.ok){const d=await res.json();setFaceLocked(Boolean(d.policy?.faceLocked))}
+  }
+  useEffect(()=>{refresh();refreshCamera()},[])
+
+  async function lockCamera(){
+    if(!confirm('Lock your camera permanently?\n\nYour face will never be sent on a team call. Blurred and initials-only stay available. This cannot be undone from here — reversing it needs a direct database change.'))return
+    setLocking(true)
+    try{
+      const res=await fetch('/api/call/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lock:true})})
+      if(res.ok)setFaceLocked(true)
+    }finally{setLocking(false)}
+  }
 
   async function startEnroll(){
     setError('');setEnrolling(true)
@@ -77,6 +92,25 @@ export default function SecurityPage(){
           <button type="submit" className="btn-primary">Verify & Enable</button>
         </form>
       )}
+      <div className="card" style={{padding:20,marginTop:16}}>
+        <h2 style={{fontSize:15,fontWeight:600,color:'#f0f0f4',marginBottom:6}}>Camera privacy</h2>
+        <p style={{fontSize:13,color:'#8888aa',lineHeight:1.6,marginBottom:12}}>
+          Team calls always start protected: your picture is blurred on this device before
+          anything is sent, and showing your face is a deliberate click. Locking removes that
+          click entirely.
+        </p>
+        {faceLocked===null?(
+          <p style={{fontSize:13,color:'#5a5a72'}}>Checking…</p>
+        ):faceLocked?(
+          <p style={{fontSize:13,color:'#4ad3a0'}}>
+            ✓ Locked. Your face is never transmitted — clear video is not offered on this account.
+          </p>
+        ):(
+          <button className="btn-ghost" onClick={lockCamera} disabled={locking}>
+            {locking?'Locking…':'Lock my camera permanently'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

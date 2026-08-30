@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import VideoCall from '@/components/hub/VideoCall'
+import type { CameraPolicy } from '@/lib/call/policy'
 
 interface Msg {
   id: string
@@ -16,6 +18,9 @@ export default function ChatPage() {
   const [me, setMe] = useState('Team')
   const [sending, setSending] = useState(false)
   const [nessieThinking, setNessieThinking] = useState(false)
+  const [inCall, setInCall] = useState(false)
+  const [identity, setIdentity] = useState<{ me: string; name: string; policy: CameraPolicy } | null>(null)
+  const [joining, setJoining] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const sb = createClient()
 
@@ -48,6 +53,22 @@ export default function ChatPage() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, nessieThinking])
+
+  // The camera policy is resolved server-side and must be in hand before the
+  // call mounts — no camera opens until we know what this account may do.
+  async function joinCall() {
+    setJoining(true)
+    try {
+      const res = await fetch('/api/call/policy')
+      const data = await res.json()
+      if (res.ok) {
+        setIdentity({ me: data.me, name: data.name, policy: data.policy })
+        setInCall(true)
+      }
+    } finally {
+      setJoining(false)
+    }
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault()
@@ -82,10 +103,28 @@ export default function ChatPage() {
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#f0b429', marginBottom: 4 }}>FENCE HOLE HUB</p>
         <h1 className="font-display" style={{ fontSize: 30, fontWeight: 600, color: '#f0f0f4' }}>Team Chat</h1>
         <div className="gold-divider" style={{ width: 60, margin: '12px 0 8px' }} />
-        <p style={{ fontSize: 12, color: '#44445a', marginBottom: 16 }}>
-          You, Marjorie &amp; Nessie. Type <span style={{ color: '#f0b429' }}>@nessie</span> to pull her in.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 12, color: '#44445a' }}>
+            You, Marjorie &amp; Nessie. Type <span style={{ color: '#f0b429' }}>@nessie</span> to pull her in.
+          </p>
+          {!inCall && (
+            <button className="btn-ghost" onClick={joinCall} disabled={joining} style={{ marginLeft: 'auto', fontSize: 12, padding: '5px 12px' }}>
+              {joining ? 'Starting…' : '📹 Start video call'}
+            </button>
+          )}
+        </div>
       </div>
+
+      {inCall && identity && (
+        <div style={{ flexShrink: 0 }}>
+          <VideoCall
+            me={identity.me}
+            myName={identity.name}
+            policy={identity.policy}
+            onLeave={() => { setInCall(false); setIdentity(null) }}
+          />
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
         {messages.length === 0 && (
