@@ -3,41 +3,6 @@
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
-// Models to fall back to when the chosen one is unavailable — a wrong slug, no
-// credits, or a provider the account won't use. Nessie going completely mute
-// because of a catalogue change is a worse failure than answering on a
-// different model, so a request walks this list before giving up.
-export const FALLBACK_CHAIN = [
-  process.env.NESSIE_MODEL_FALLBACK,
-  'deepseek/deepseek-chat',
-  'anthropic/claude-3.5-haiku',
-].filter(Boolean) as string[]
-
-/** 402 = no credits, 404 = unknown id or a provider the account disallows. */
-function isAvailabilityFailure(status: number): boolean {
-  return status === 402 || status === 404
-}
-
-/** Try `model`, then each fallback, stopping at the first that responds. */
-async function withFallback(
-  model: string,
-  attempt: (m: string) => Promise<Response>
-): Promise<{ res: Response; used: string }> {
-  const tried = new Set<string>()
-  let last: Response | null = null
-
-  for (const candidate of [model, ...FALLBACK_CHAIN]) {
-    if (tried.has(candidate)) continue
-    tried.add(candidate)
-    const res = await attempt(candidate)
-    if (res.ok) return { res, used: candidate }
-    last = res
-    if (!isAvailabilityFailure(res.status)) break
-  }
-
-  return { res: last!, used: model }
-}
-
 // OpenRouter failures arrive as raw JSON blobs. Chris sees these directly in
 // the Hub, so translate the ones we expect into something a human can act on.
 export function explainOpenRouterError(status: number, body: string): string {
@@ -45,9 +10,7 @@ export function explainOpenRouterError(status: number, body: string): string {
     return (
       'Nessie is wired up correctly, but her OpenRouter account has no credits, ' +
       'so no model will answer. Add credits at https://openrouter.ai/settings/credits ' +
-      '(a few dollars covers months at this volume) and she starts talking immediately. ' +
-      'To run her on a free model instead, set NESSIE_MODEL_FALLBACK to a ":free" ' +
-      'model id from https://openrouter.ai/models.'
+      'and she starts talking immediately.'
     )
   }
   if (status === 401 || status === 403) {
@@ -66,7 +29,7 @@ export function explainOpenRouterError(status: number, body: string): string {
       )
     }
     return (
-      `OpenRouter does not recognise that model id. Check it at ` +
+      'OpenRouter does not recognise that model id. Check it at ' +
       `https://openrouter.ai/models. OpenRouter said: ${body.slice(0, 260)}`
     )
   }
@@ -74,6 +37,65 @@ export function explainOpenRouterError(status: number, body: string): string {
     return 'OpenRouter rate limit hit. Wait a moment and try again.'
   }
   return `OpenRouter error ${status}: ${body.slice(0, 300)}`
+}
+
+// Models to fall back to when the chosen one is unavailable — a wrong slug, no
+// credits, or a provider the account won't use. Nessie going completely mute
+// because of a catalogue change is a worse failure than answering on a
+// different model, so a request walks this list before giving up.
+export const FALLBACK_CHAIN = [
+  process.env.NESSIE_MODEL_FALLBACK,
+  'deepseek/deepseek-chat',
+].filter(Boolean) as string[]
+
+/** 402 = no credits, 404 = unknown id or a provider the account disallows. */
+function isAvailabilityFailure(status: number): boolean {
+  return status === 402 || status === 404
+}
+
+interface FallbackFailure {
+  status: number
+  body: string
+  tried: string[]
+}
+
+/**
+ * Try `model`, then each fallback, stopping at the first that responds.
+ *
+ * On total failure this reports the FIRST failure, not the last. The last one
+ * is whatever the final fallback happened to say, which describes a model
+ * nobody asked for and buries the actual cause.
+ */
+async function withFallback(
+  model: string,
+  attempt: (m: string) => Promise<Response>
+): Promise<{ res: Response; used: string } | { failure: FallbackFailure }> {
+  const tried: string[] = []
+  let first: { status: number; body: string } | null = null
+
+  for (const candidate of [model, ...FALLBACK_CHAIN]) {
+    if (tried.includes(candidate)) continue
+    tried.push(candidate)
+
+    const res = await attempt(candidate)
+    if (res.ok) return { res, used: candidate }
+
+    const body = await res.text()
+    if (!first) first = { status: res.status, body }
+    // Anything other than an availability problem won't be fixed by trying a
+    // different model, so stop rather than burning credits on the same error.
+    if (!isAvailabilityFailure(res.status)) break
+  }
+
+  return { failure: { status: first!.status, body: first!.body, tried } }
+}
+
+/** Error text for an exhausted chain, naming what else was attempted. */
+function fallbackError(f: FallbackFailure): string {
+  const base = explainOpenRouterError(f.status, f.body)
+  return f.tried.length > 1
+    ? `${base}\n\n(Also tried: ${f.tried.slice(1).join(', ')} — none worked.)`
+    : base
 }
 
 export interface LLMUsage {
@@ -120,12 +142,9 @@ export async function callOpenRouter(
   systemPrompt: string,
   userPrompt: string
 ): Promise<LLMResult> {
-  const { res, used } = await withFallback(model, (m) => postChat(m, systemPrompt, userPrompt))
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(explainOpenRouterError(res.status, text))
-  }
+  const outcome = await withFallback(model, (m) => postChat(m, systemPrompt, userPrompt))
+  if ('failure' in outcome) throw new Error(fallbackError(outcome.failure))
+  const { res, used } = outcome
 
   const data = await res.json()
   return {
@@ -254,12 +273,9 @@ export async function chatWithTools(
       body: JSON.stringify({ model: m, messages, tools, tool_choice: 'auto' }),
     })
 
-  const { res, used } = await withFallback(model, send)
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(explainOpenRouterError(res.status, text))
-  }
+  const outcome = await withFallback(model, send)
+  if ('failure' in outcome) throw new Error(fallbackError(outcome.failure))
+  const { res, used } = outcome
 
   const data = await res.json()
   const choice = data.choices?.[0]?.message ?? { role: 'assistant', content: '' }
