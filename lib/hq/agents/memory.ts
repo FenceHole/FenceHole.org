@@ -23,10 +23,15 @@ export interface ConversationEntry {
 
 export async function recallMemory(agentId: string, limit = 20): Promise<MemoryEntry[]> {
   const sb = createAdminClient()
+  // Categories prefixed with __ are configuration stored in this table
+  // (model overrides, camera policy) — not things Nessie should believe she
+  // remembers about Chris. Without this they crowd out real memories, since
+  // they sort newest-first like everything else.
   const { data } = await sb
     .from('agent_memory')
     .select('*')
     .eq('agent_id', agentId)
+    .not('category', 'like', '\\_\\_%')
     .order('updated_at', { ascending: false })
     .limit(limit)
   return data ?? []

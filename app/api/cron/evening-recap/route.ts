@@ -19,41 +19,51 @@ function authorized(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const sb = createAdminClient()
-  const today = new Date().toISOString().slice(0, 10)
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  try {
 
-  const [{ data: tasks }, { data: drafts }, { data: recentConvo }, memories] = await Promise.all([
-    sb.from('tasks').select('title,priority,due_date,status').neq('status', 'done').order('due_date'),
-    sb.from('agent_drafts').select('title,kind,status').eq('status', 'pending'),
-    sb.from('agent_conversations').select('role,content,channel').gte('created_at', since).order('created_at'),
-    recallMemory(AGENT_ID, 10),
-  ])
+    const sb = createAdminClient()
+    const today = new Date().toISOString().slice(0, 10)
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-  const prompt = `It's evening on ${today}. Give Chris a short recap and set him up for tomorrow. Be Donna: warm but efficient, no fluff.
+    const [{ data: tasks }, { data: drafts }, { data: recentConvo }, memories] = await Promise.all([
+      sb.from('tasks').select('title,priority,due_date,status').neq('status', 'done').order('due_date'),
+      sb.from('agent_drafts').select('title,kind,status').eq('status', 'pending'),
+      sb.from('agent_conversations').select('role,content,channel').gte('created_at', since).order('created_at'),
+      recallMemory(AGENT_ID, 10),
+    ])
 
-Still open / not done:
-${(tasks ?? []).map((t) => `- [${t.priority}] ${t.title}${t.due_date ? ` (due ${t.due_date})` : ''}`).join('\n') || 'none'}
+    const prompt = `It's evening on ${today}. Give Chris a short recap and set him up for tomorrow. Be Donna: warm but efficient, no fluff.
 
-Still waiting on his approval (/hq/approvals):
-${(drafts ?? []).map((d) => `- (${d.kind}) ${d.title}`).join('\n') || 'none'}
+  Still open / not done:
+  ${(tasks ?? []).map((t) => `- [${t.priority}] ${t.title}${t.due_date ? ` (due ${t.due_date})` : ''}`).join('\n') || 'none'}
 
-Today's conversation across channels (${(recentConvo ?? []).length} messages):
-${(recentConvo ?? []).slice(-20).map((c) => `- [${c.channel}/${c.role}] ${c.content.slice(0, 140)}`).join('\n') || 'quiet day'}
+  Still waiting on his approval (/hq/approvals):
+  ${(drafts ?? []).map((d) => `- (${d.kind}) ${d.title}`).join('\n') || 'none'}
 
-Recent notes/memory:
-${memories.map((m) => `- ${m.content}`).join('\n') || 'none'}
+  Today's conversation across channels (${(recentConvo ?? []).length} messages):
+  ${(recentConvo ?? []).slice(-20).map((c) => `- [${c.channel}/${c.role}] ${c.content.slice(0, 140)}`).join('\n') || 'quiet day'}
 
-Structure your reply as:
-1) What moved today (1-3 bullets)
-2) What's still open and needs attention
-3) Tomorrow's #1 priority — your pick, stated plainly`
+  Recent notes/memory:
+  ${memories.map((m) => `- ${m.content}`).join('\n') || 'none'}
 
-  const result = await callOpenRouter(MODEL_TIERS.complex.id, NESSIE_SYSTEM_PROMPT, prompt)
+  Structure your reply as:
+  1) What moved today (1-3 bullets)
+  2) What's still open and needs attention
+  3) Tomorrow's #1 priority — your pick, stated plainly`
 
-  const to = process.env.CHRIS_WHATSAPP_NUMBER
-  if (to) await sendWhatsApp(to, `🌙 Evening recap — ${today}\n\n${result.content}`)
-  await logMessage(AGENT_ID, 'whatsapp', to ?? 'system', 'assistant', result.content)
+    const result = await callOpenRouter(MODEL_TIERS.complex.id, NESSIE_SYSTEM_PROMPT, prompt)
 
-  return NextResponse.json({ ok: true, sent: !!to, recap: result.content })
+    const to = process.env.CHRIS_WHATSAPP_NUMBER
+    if (to) await sendWhatsApp(to, `🌙 Evening recap — ${today}\n\n${result.content}`)
+    await logMessage(AGENT_ID, 'whatsapp', to ?? 'system', 'assistant', result.content)
+
+    return NextResponse.json({ ok: true, sent: !!to, recap: result.content })
+  } catch (err) {
+    // An unhandled throw here becomes an empty 500 with nothing in the
+    // logs, indistinguishable from a timeout. Say what actually failed.
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'unknown error' },
+      { status: 500 }
+    )
+  }
 }
