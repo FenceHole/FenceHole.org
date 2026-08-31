@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runNessie } from '@/lib/hq/agents/loop'
+import { callOpenRouter } from '@/lib/hq/agents/llm'
 import { sendWhatsApp } from '@/lib/integrations/twilio'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { recallMemory, logMessage } from '@/lib/hq/agents/memory'
@@ -19,6 +20,25 @@ export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   try {
+  // ?probe=1 — a single tiny model call, no tools, no loop, no writes. The
+  // full briefing takes long enough that a failure is hard to tell apart from
+  // a timeout; this answers "can she reach a model at all" in about a second.
+  if (new URL(req.url).searchParams.get('probe')) {
+    const { resolveModel } = await import('@/lib/hq/agents/settings')
+    const out: Record<string, unknown> = {}
+    for (const tier of ['simple', 'standard', 'complex'] as const) {
+      const model = await resolveModel(tier)
+      const started = Date.now()
+      try {
+        const r = await callOpenRouter(model, 'Reply with the single word: ok', 'ping')
+        out[tier] = { model, answered_as: r.model, reply: r.content.slice(0, 40), ms: Date.now() - started }
+      } catch (err) {
+        out[tier] = { model, error: err instanceof Error ? err.message.slice(0, 400) : 'unknown', ms: Date.now() - started }
+      }
+    }
+    return NextResponse.json({ probe: true, tiers: out })
+  }
+
 
     const sb = createAdminClient()
     const today = new Date().toISOString().slice(0, 10)
