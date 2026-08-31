@@ -3,6 +3,41 @@
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+// Models to fall back to when the chosen one is unavailable — a wrong slug, no
+// credits, or a provider the account won't use. Nessie going completely mute
+// because of a catalogue change is a worse failure than answering on a
+// different model, so a request walks this list before giving up.
+export const FALLBACK_CHAIN = [
+  process.env.NESSIE_MODEL_FALLBACK,
+  'deepseek/deepseek-chat',
+  'anthropic/claude-3.5-haiku',
+].filter(Boolean) as string[]
+
+/** 402 = no credits, 404 = unknown id or a provider the account disallows. */
+function isAvailabilityFailure(status: number): boolean {
+  return status === 402 || status === 404
+}
+
+/** Try `model`, then each fallback, stopping at the first that responds. */
+async function withFallback(
+  model: string,
+  attempt: (m: string) => Promise<Response>
+): Promise<{ res: Response; used: string }> {
+  const tried = new Set<string>()
+  let last: Response | null = null
+
+  for (const candidate of [model, ...FALLBACK_CHAIN]) {
+    if (tried.has(candidate)) continue
+    tried.add(candidate)
+    const res = await attempt(candidate)
+    if (res.ok) return { res, used: candidate }
+    last = res
+    if (!isAvailabilityFailure(res.status)) break
+  }
+
+  return { res: last!, used: model }
+}
+
 // OpenRouter failures arrive as raw JSON blobs. Chris sees these directly in
 // the Hub, so translate the ones we expect into something a human can act on.
 export function explainOpenRouterError(status: number, body: string): string {
@@ -19,15 +54,20 @@ export function explainOpenRouterError(status: number, body: string): string {
     return 'OpenRouter rejected the API key. Check OPENROUTER_API_KEY in Vercel (Production).'
   }
   if (status === 404) {
-    // A 404 here is ambiguous: either the slug is wrong, or the model exists
-    // but no provider endpoint is available to this account — most often
-    // because of the privacy/data-policy setting at
-    // https://openrouter.ai/settings/privacy. Pass the real message through
-    // rather than guessing which it is.
+    // Two very different causes share this status. An allowed-providers or
+    // data-policy restriction means the id is fine and the account simply
+    // won't use the provider serving it — a settings fix, not a code fix.
+    if (/allowed providers|allowed-providers|data policy/i.test(body)) {
+      return (
+        'That model is real, but your OpenRouter account will not use the provider that ' +
+        'serves it. Either widen the allowed providers at ' +
+        'https://openrouter.ai/settings/preferences, or pick a model from a provider you ' +
+        `already allow (Nessie's Brain page can test one). OpenRouter said: ${body.slice(0, 260)}`
+      )
+    }
     return (
-      `OpenRouter returned 404 for that model. Either the slug is wrong, or no ` +
-      `provider endpoint is available for your account's data policy ` +
-      `(https://openrouter.ai/settings/privacy). OpenRouter said: ${body.slice(0, 300)}`
+      `OpenRouter does not recognise that model id. Check it at ` +
+      `https://openrouter.ai/models. OpenRouter said: ${body.slice(0, 260)}`
     )
   }
   if (status === 429) {
@@ -80,14 +120,7 @@ export async function callOpenRouter(
   systemPrompt: string,
   userPrompt: string
 ): Promise<LLMResult> {
-  let res = await postChat(model, systemPrompt, userPrompt)
-
-  // If the chosen model is unavailable or unaffordable, fall back to a model
-  // set in NESSIE_MODEL_FALLBACK (e.g. a ":free" id) so Nessie still answers.
-  const fallback = process.env.NESSIE_MODEL_FALLBACK
-  if (!res.ok && fallback && fallback !== model && (res.status === 402 || res.status === 404)) {
-    res = await postChat(fallback, systemPrompt, userPrompt)
-  }
+  const { res, used } = await withFallback(model, (m) => postChat(m, systemPrompt, userPrompt))
 
   if (!res.ok) {
     const text = await res.text()
@@ -97,7 +130,7 @@ export async function callOpenRouter(
   const data = await res.json()
   return {
     content: data.choices?.[0]?.message?.content ?? '',
-    model: data.model ?? model,
+    model: data.model ?? used,
     usage: data.usage,
   }
 }
@@ -221,12 +254,7 @@ export async function chatWithTools(
       body: JSON.stringify({ model: m, messages, tools, tool_choice: 'auto' }),
     })
 
-  let res = await send(model)
-
-  const fallback = process.env.NESSIE_MODEL_FALLBACK
-  if (!res.ok && fallback && fallback !== model && (res.status === 402 || res.status === 404)) {
-    res = await send(fallback)
-  }
+  const { res, used } = await withFallback(model, send)
 
   if (!res.ok) {
     const text = await res.text()
@@ -235,5 +263,5 @@ export async function chatWithTools(
 
   const data = await res.json()
   const choice = data.choices?.[0]?.message ?? { role: 'assistant', content: '' }
-  return { message: choice as ChatMessage, model: data.model ?? model, usage: data.usage }
+  return { message: choice as ChatMessage, model: data.model ?? used, usage: data.usage }
 }

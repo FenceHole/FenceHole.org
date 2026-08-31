@@ -16,13 +16,16 @@ export interface ModelChoice {
 }
 
 // Model IDs are env-overridable so a model can be swapped without a deploy.
-// Every default below has been confirmed working against OpenRouter by
-// GET /api/hq/nessie/selftest — do not change one without re-running it.
+// Test any candidate on /hq/models before trusting a tier to it — and note
+// that an id being valid is not enough: the account's allowed-providers
+// setting also has to permit whoever serves it.
 //
-// The voice tier is a Hermes-class model (see nessie/HARNESS.md). Hermes has
-// no tool-use endpoint on OpenRouter, which is fine: this tier handles small
-// talk and one-liners, and the loop deliberately calls it WITHOUT tools.
-const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
+// The voice tier was a Hermes-class model, but Hermes is served only by
+// providers this OpenRouter account does not allow, so every short message
+// failed. Pointing it at a provider on the account's allow-list instead;
+// NESSIE_MODEL_VOICE or the Hub's model page can move it back if the allowed
+// providers are ever widened.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'deepseek/deepseek-chat'
 const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-chat'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
 
@@ -30,7 +33,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
     id: VOICE_MODEL,
-    label: 'Hermes (voice)',
+    label: 'Voice tier',
     role: 'voice',
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,
