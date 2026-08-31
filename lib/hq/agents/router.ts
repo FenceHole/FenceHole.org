@@ -21,14 +21,18 @@ export interface ModelChoice {
 // setting also has to permit whoever serves it.
 //
 // NOTE: this account restricts OpenRouter to an allowed-providers list, and
-// OpenRouter silently re-points slugs at new provider variants — deepseek-chat
-// became deepseek-chat-v3 (streamlake/deepinfra) and qwen3-8b became
-// qwen3-8b-04-28 (alibaba), neither of which the list permits. That is why
-// every tier died at once. The durable fix is widening that list; until then
-// these defaults have to name models the list actually covers.
+// OpenRouter re-points slugs at new provider variants without warning —
+// deepseek-chat became deepseek-chat-v3 (streamlake/deepinfra) and qwen3-8b
+// became qwen3-8b-04-28 (alibaba), neither permitted. That is why every tier
+// died at once with no code change.
+//
+// Both defaults below were measured against this account, not guessed:
+//   nousresearch/hermes-4-70b          ok, 879ms (nebius)
+//   meta-llama/llama-3.3-70b-instruct  ok, 519ms (meta)
+// Re-measure on /hq/models before changing either.
 const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
-const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-chat'
-const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
+const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'meta-llama/llama-3.3-70b-instruct'
+const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'meta-llama/llama-3.3-70b-instruct'
 
 export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
@@ -39,10 +43,10 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,
   },
-  // Standard path — the Qwen workers handle triage and drafting.
+  // Standard path — the worker model handles triage and drafting.
   standard: {
     id: WORKER_MODEL,
-    label: 'Qwen3 8B (worker)',
+    label: 'Llama 3.3 70B (worker)',
     role: 'worker',
     tier: 'standard',
     approxCostPer1kTokens: 0.0001,
@@ -50,7 +54,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Full path — anything carrying a judgment goes through the harness.
   complex: {
     id: HARNESS_MODEL,
-    label: 'DeepSeek V3 (harness)',
+    label: 'Llama 3.3 70B (harness)',
     role: 'harness',
     tier: 'complex',
     approxCostPer1kTokens: 0.0022,

@@ -45,7 +45,9 @@ export function explainOpenRouterError(status: number, body: string): string {
 // different model, so a request walks this list before giving up.
 export const FALLBACK_CHAIN = [
   process.env.NESSIE_MODEL_FALLBACK,
-  'deepseek/deepseek-chat',
+  // Verified against this account rather than assumed; deepseek/deepseek-chat
+  // was in this list and had itself become unreachable.
+  'meta-llama/llama-3.3-70b-instruct',
 ].filter(Boolean) as string[]
 
 /** 402 = no credits, 404 = unknown id or a provider the account disallows. */
