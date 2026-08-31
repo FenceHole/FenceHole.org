@@ -20,12 +20,13 @@ export interface ModelChoice {
 // that an id being valid is not enough: the account's allowed-providers
 // setting also has to permit whoever serves it.
 //
-// The voice tier was a Hermes-class model, but Hermes is served only by
-// providers this OpenRouter account does not allow, so every short message
-// failed. Pointing it at a provider on the account's allow-list instead;
-// NESSIE_MODEL_VOICE or the Hub's model page can move it back if the allowed
-// providers are ever widened.
-const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'deepseek/deepseek-chat'
+// NOTE: this account restricts OpenRouter to an allowed-providers list, and
+// OpenRouter silently re-points slugs at new provider variants — deepseek-chat
+// became deepseek-chat-v3 (streamlake/deepinfra) and qwen3-8b became
+// qwen3-8b-04-28 (alibaba), neither of which the list permits. That is why
+// every tier died at once. The durable fix is widening that list; until then
+// these defaults have to name models the list actually covers.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
 const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'deepseek/deepseek-chat'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'qwen/qwen3-8b'
 
@@ -33,7 +34,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
     id: VOICE_MODEL,
-    label: 'Voice tier',
+    label: 'Hermes (voice)',
     role: 'voice',
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,
