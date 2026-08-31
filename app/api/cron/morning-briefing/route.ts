@@ -26,8 +26,17 @@ export async function GET(req: NextRequest) {
   if (new URL(req.url).searchParams.get('probe')) {
     const { resolveModel } = await import('@/lib/hq/agents/settings')
     const out: Record<string, unknown> = {}
-    for (const tier of ['simple', 'standard', 'complex'] as const) {
-      const model = await resolveModel(tier)
+    // ?models=a,b,c probes specific ids instead of the configured tiers, so a
+    // working combination can be found by measurement rather than by guessing.
+    const explicit = new URL(req.url).searchParams.get('models')
+    const targets: [string, string][] = explicit
+      ? explicit.split(',').map((m) => [m.trim(), m.trim()] as [string, string])
+      : await Promise.all(
+          (['simple', 'standard', 'complex'] as const).map(
+            async (t) => [t, await resolveModel(t)] as [string, string]
+          )
+        )
+    for (const [tier, model] of targets) {
       const started = Date.now()
       try {
         const r = await callOpenRouter(model, 'Reply with the single word: ok', 'ping')
