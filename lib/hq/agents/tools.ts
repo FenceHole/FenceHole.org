@@ -8,6 +8,7 @@
 //     there is deliberately no tool that sends, posts, publishes, or spends.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { listPages, getPage, savePage, deletePage, toSlug, DATA_SOURCES, type Panel } from '@/lib/hub/modules'
 
 export interface ToolDef {
   type: 'function'
@@ -57,6 +58,33 @@ export const NESSIE_TOOLS: ToolDef[] = [
   tool('add_content_idea', 'Add an idea to the content pipeline.', {
     title: str('The idea.'), notes: str('Optional detail.'),
   }, ['title']),
+
+  tool(
+    'build_hub_page',
+    'Create or replace a page in the Hub, built from panels. This is how you ' +
+    'customise your own environment — if Chris asks for a view, dashboard or ' +
+    'checklist, build it rather than describing it. Pages appear in the sidebar ' +
+    'immediately. Re-calling with the same title replaces that page.',
+    {
+      title: str('Page name, e.g. "Deal Room" or "Weekly Review".'),
+      description: str('Optional one-line subtitle.'),
+      icon: str('Optional single emoji.'),
+      panels: {
+        type: 'array',
+        description:
+          'Panels, in order. Each is one of: ' +
+          '{type:"text",title,body} · ' +
+          '{type:"stat",title,source} · ' +
+          '{type:"list",title,source,limit} · ' +
+          '{type:"links",title,items:[{label,href}]}. ' +
+          `Valid sources: ${Object.keys(DATA_SOURCES).join(', ')}.`,
+        items: { type: 'object' },
+      },
+    },
+    ['title', 'panels']
+  ),
+  tool('list_hub_pages', 'The pages you have built, with their panels.', {}),
+  tool('delete_hub_page', 'Remove a page you built.', { slug: str('Its slug.') }, ['slug']),
 
   tool(
     'request_mac_action',
@@ -180,6 +208,79 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
       const { error } = await sb.from('content_ideas')
         .insert({ title, notes: args.notes ? String(args.notes) : null })
       return error ? { error: error.message } : { ok: true, added: title }
+    }
+
+    case 'build_hub_page': {
+      const title = String(args.title ?? '').trim()
+      if (!title) return { error: 'title is required' }
+      const slug = toSlug(title)
+      if (!slug) return { error: 'that title does not make a usable page name' }
+
+      // Validate every panel before saving. A page that half-renders is worse
+      // than a refusal that says which panel was wrong.
+      const raw = Array.isArray(args.panels) ? args.panels : []
+      const panels: Panel[] = []
+      for (const [i, p] of raw.entries()) {
+        const panel = p as Record<string, unknown>
+        const pTitle = String(panel.title ?? '').trim() || 'Untitled'
+        const type = String(panel.type ?? '')
+
+        if (type === 'text') {
+          panels.push({ type: 'text', title: pTitle, body: String(panel.body ?? '') })
+        } else if (type === 'stat' || type === 'list') {
+          const source = String(panel.source ?? '')
+          if (!(source in DATA_SOURCES)) {
+            return { error: `panel ${i + 1}: "${source}" is not a valid source. Use one of: ${Object.keys(DATA_SOURCES).join(', ')}` }
+          }
+          panels.push(
+            type === 'stat'
+              ? { type: 'stat', title: pTitle, source: source as keyof typeof DATA_SOURCES }
+              : {
+                  type: 'list',
+                  title: pTitle,
+                  source: source as keyof typeof DATA_SOURCES,
+                  limit: Math.min(Number(panel.limit) || 8, 25),
+                }
+          )
+        } else if (type === 'links') {
+          const items = Array.isArray(panel.items) ? panel.items : []
+          panels.push({
+            type: 'links',
+            title: pTitle,
+            items: items
+              .map((it) => it as Record<string, unknown>)
+              .filter((it) => it.label && it.href)
+              // Only http(s) and in-app paths — no javascript: or data: URLs.
+              .filter((it) => /^(https?:\/\/|\/)/i.test(String(it.href)))
+              .map((it) => ({ label: String(it.label).slice(0, 80), href: String(it.href).slice(0, 300) })),
+          })
+        } else {
+          return { error: `panel ${i + 1}: unknown type "${type}". Use text, stat, list or links.` }
+        }
+      }
+
+      await savePage({
+        slug,
+        title,
+        description: args.description ? String(args.description) : undefined,
+        icon: args.icon ? String(args.icon).slice(0, 4) : undefined,
+        panels,
+        updatedAt: new Date().toISOString(),
+      })
+      return { ok: true, slug, url: `/hub/x/${slug}`, panels: panels.length, note: 'Live now and in the sidebar.' }
+    }
+
+    case 'list_hub_pages': {
+      const pages = await listPages()
+      return pages.map((p) => ({ slug: p.slug, title: p.title, panels: p.panels.length, url: `/hub/x/${p.slug}` }))
+    }
+
+    case 'delete_hub_page': {
+      const slug = String(args.slug ?? '').trim()
+      if (!slug) return { error: 'slug is required' }
+      if (!(await getPage(slug))) return { error: `no page called "${slug}"` }
+      await deletePage(slug)
+      return { ok: true, deleted: slug }
     }
 
     case 'request_mac_action': {

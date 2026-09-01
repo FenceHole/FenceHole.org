@@ -20,7 +20,7 @@ const NAV=[
   {href:'/client',label:'Client Portal',icon:'👤'},
   {href:'/account/security',label:'Security',icon:'🔒'},
 ]
-export default function Sidebar({userName}:{userName:string}) {
+export default function Sidebar({userName,builtPages=[]}:{userName:string;builtPages?:{href:string;label:string;icon:string}[]}) {
   const pathname=usePathname()
   const router=useRouter()
   const [open,setOpen]=useState(false)
@@ -61,6 +61,17 @@ export default function Sidebar({userName}:{userName:string}) {
               <span>{item.label}</span>
             </Link>
           })}
+          {builtPages.length>0&&(
+            <>
+              <p style={{fontSize:9,fontWeight:700,letterSpacing:2,color:'#44445a',padding:'12px 12px 4px'}}>BUILT BY NESSIE</p>
+              {builtPages.map(item=>(
+                <Link key={item.href} href={item.href} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',borderRadius:8,color:pathname===item.href?'#f0f0f4':'#8888aa',background:pathname===item.href?'#16162a':'transparent',fontSize:14,textDecoration:'none'}}>
+                  <span style={{width:18,textAlign:'center'}}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </>
+          )}
         </nav>
         <div style={{padding:'16px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
