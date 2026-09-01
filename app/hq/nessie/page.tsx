@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { speak, stopSpeaking, pickVoice, listVoices, setVoice } from '@/lib/voice'
 
 const TIER_LABEL: Record<string, string> = {
   simple: 'Hermes · voice',
@@ -28,30 +29,84 @@ export default function NessiePage() {
   const [listening, setListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
   const [voiceOut, setVoiceOut] = useState(true)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [voiceName, setVoiceName] = useState<string>('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [files, setFiles] = useState<{ name: string; kind: 'text' | 'image'; text?: string; dataUrl?: string }[]>([])
   const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     setVoiceSupported(!!SR && 'speechSynthesis' in window)
+
+    // Chrome populates the voice list asynchronously, so the first read is
+    // usually empty — hence the voiceschanged listener as well.
+    const load = () => {
+      const list = listVoices()
+      setVoices(list)
+      const best = pickVoice()
+      if (best) setVoiceName(best.name)
+    }
+    load()
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener('voiceschanged', load)
+      return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
+    }
   }, [])
 
   useEffect(() => {
-    if (!lastReply || !voiceOut || !('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(lastReply))
+    if (!lastReply || !voiceOut) return
+    speak(lastReply)
   }, [lastReply, voiceOut])
 
+  // Keep the newest turn in view — the whole point is reading her latest
+  // reply without hunting for it.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [turns, loading])
+
+  const TEXT_EXT = /\.(md|markdown|txt|csv|json|ya?ml|ts|tsx|js|jsx|py|html|css|sql|log)$/i
+
+  async function addFiles(list: FileList | null) {
+    if (!list) return
+    const next: typeof files = []
+    for (const f of Array.from(list)) {
+      const isImage = f.type.startsWith('image/')
+      const isText = f.type.startsWith('text/') || TEXT_EXT.test(f.name) || f.type === 'application/json'
+      if (isImage) {
+        const dataUrl = await new Promise<string>((res) => {
+          const r = new FileReader()
+          r.onload = () => res(String(r.result))
+          r.readAsDataURL(f)
+        })
+        next.push({ name: f.name, kind: 'image', dataUrl })
+      } else if (isText) {
+        next.push({ name: f.name, kind: 'text', text: await f.text() })
+      } else {
+        // PDFs and binaries would need parsing she doesn't have yet; say so
+        // rather than attaching something she'll silently ignore.
+        setError(`${f.name}: only images and text files (.md, .txt, .csv, .json, code) are supported right now.`)
+      }
+    }
+    if (next.length) setFiles((prev) => [...prev, ...next])
+  }
+
   async function runAsk(text: string) {
-    if (!text.trim()) return
+    if (!text.trim() && files.length === 0) return
     setLoading(true)
     setError(null)
-    setTurns((prev) => [...prev, { role: 'you', text }])
+    setTurns((prev) => [...prev, {
+      role: 'you',
+      text: files.length ? `${text}\n\n📎 ${files.map((f) => f.name).join(', ')}` : text,
+    }])
     setTask('')
+    setFiles([])
     try {
       const res = await fetch('/api/hq/nessie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task: text }),
+        body: JSON.stringify({ task: text, attachments: files }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Request failed')
@@ -82,7 +137,7 @@ export default function NessiePage() {
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+    stopSpeaking()
 
     const recognition = new SR()
     recognition.lang = 'en-US'
@@ -153,6 +208,22 @@ export default function NessiePage() {
             </button>
           )}
 
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*,text/*,.md,.markdown,.txt,.csv,.json,.yaml,.yml,.ts,.tsx,.js,.jsx,.py,.html,.css,.sql,.log"
+            className="hidden"
+            onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white/50 hover:text-white/80 hover:border-amber-400/30"
+            title="Attach images or files"
+          >
+            📎 Attach
+          </button>
           {voiceSupported && (
             <button
               type="button"
@@ -163,7 +234,41 @@ export default function NessiePage() {
               {voiceOut ? '🔊 Voice replies on' : '🔇 Voice replies off'}
             </button>
           )}
+          {voiceSupported && voices.length > 0 && (
+            <select
+              value={voiceName}
+              onChange={(e) => {
+                const v = voices.find((x) => x.name === e.target.value) ?? null
+                setVoice(v)
+                setVoiceName(e.target.value)
+                if (v) speak('Okay — this is how I sound now.')
+              }}
+              className="rounded-lg border border-white/10 bg-[#111120] px-2 py-2 text-xs text-white/60 hover:border-amber-400/30"
+              title="Her speaking voice — the browser default is the robotic one"
+            >
+              {voices.map((v) => (
+                <option key={v.name} value={v.name}>{v.name}</option>
+              ))}
+            </select>
+          )}
         </div>
+        {files.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {files.map((f, i) => (
+              <span key={i} className="flex items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] px-2.5 py-1 text-[11px] text-amber-200/90">
+                {f.kind === 'image' ? '🖼' : '📄'} {f.name}
+                <button
+                  type="button"
+                  onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                  className="text-white/40 hover:text-white/80"
+                  aria-label={`Remove ${f.name}`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         {!voiceSupported && (
           <p className="text-[11px] text-white/30">
             Voice conversation isn't supported in this browser — try Chrome or Safari.
@@ -179,18 +284,20 @@ export default function NessiePage() {
               Add OPENROUTER_API_KEY in Vercel → Project → Settings → Environment Variables, then redeploy.
             </p>
           )}
+          <div ref={bottomRef} />
         </div>
       )}
 
       {turns.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {turns.map((t, i) =>
             t.role === 'you' ? (
-              <div key={i} className="self-end max-w-[85%] rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5">
-                <p className="text-sm text-white/75 whitespace-pre-wrap leading-relaxed">{t.text}</p>
+              <div key={i} className="self-end max-w-[85%] rounded-xl border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2.5">
+                <p className="text-[10px] tracking-widest text-sky-300/70 mb-1">YOU</p>
+                <p className="text-sm text-white/85 whitespace-pre-wrap leading-relaxed">{t.text}</p>
               </div>
             ) : (
-              <div key={i} className="rounded-xl border border-amber-400/15 bg-white/[0.03] p-4 flex flex-col gap-3">
+              <div key={i} className="self-start max-w-[92%] rounded-xl border-l-2 border-l-amber-400/60 border border-amber-400/20 bg-amber-400/[0.04] p-4 flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2 text-[11px]">
                   <span className="font-display text-amber-300/80 tracking-widest text-[10px]">NESSIE</span>
                   {t.tier && (
