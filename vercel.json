@@ -3,7 +3,17 @@
   "framework": "nextjs",
   "outputDirectory": ".next",
   "crons": [
-    { "path": "/api/cron/morning-briefing", "schedule": "0 13 * * *" },
-    { "path": "/api/cron/evening-recap", "schedule": "0 1 * * *" }
+    {
+      "path": "/api/cron/morning-briefing",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/evening-recap",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/self-review",
+      "schedule": "40 7 * * *"
+    }
   ]
 }

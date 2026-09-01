@@ -9,6 +9,11 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { listPages, getPage, savePage, deletePage, toSlug, DATA_SOURCES, type Panel } from '@/lib/hub/modules'
+import {
+  isConfigured, notConfigured, connectorStatus,
+  githubRepos, githubActivity, vercelDeployments,
+  cloudflareZones, cloudflareDns, webSearch,
+} from '@/lib/integrations/connectors'
 
 export interface ToolDef {
   type: 'function'
@@ -85,6 +90,40 @@ export const NESSIE_TOOLS: ToolDef[] = [
   ),
   tool('list_hub_pages', 'The pages you have built, with their panels.', {}),
   tool('delete_hub_page', 'Remove a page you built.', { slug: str('Its slug.') }, ['slug']),
+
+  tool('search_web', 'Search the open web. Use it for research, checking a claim, or ' +
+    'looking up what changed in a tool — not for anything you already know.', {
+    query: str('What to search for.'),
+  }, ['query']),
+  tool('list_connections', 'Which outside services you are connected to, and what each ' +
+    'one still needs. Use this when Chris asks what you can reach.', {}),
+  tool('github_repos', "Chris's repositories, most recently updated first.", {}),
+  tool('github_activity', 'Recent commits and open pull requests for one repository.', {
+    repo: str('owner/name, e.g. FenceHole/FenceHole.org'),
+  }, ['repo']),
+  tool('vercel_deployments', 'Recent deployments and whether they succeeded. Useful when ' +
+    'something on a site is broken.', {
+    project: str('Optional project name to filter by.'),
+  }),
+  tool('cloudflare_zones', 'Domains on Cloudflare.', {}),
+  tool('cloudflare_dns', 'DNS records for one zone. Read-only — changing a record goes ' +
+    'through request_infra_change.', {
+    zone_id: str('The zone id from cloudflare_zones.'),
+  }, ['zone_id']),
+  tool(
+    'request_infra_change',
+    'Propose a change to live infrastructure — DNS, a repository, a deployment. Like ' +
+    'queue_draft this only REQUESTS: it is written down for Chris to approve and nothing ' +
+    'happens until he does. A wrong DNS record takes a site off the internet, so say ' +
+    'plainly what would change and what it would affect.',
+    {
+      service: str('github, vercel, cloudflare or ionos.'),
+      summary: str('One line: what would change.'),
+      detail: str('The specifics — exact record, repo, or setting, and the new value.'),
+      why: str('Why you want it, and what breaks if it goes wrong.'),
+    },
+    ['service', 'summary', 'detail', 'why']
+  ),
 
   tool(
     'request_mac_action',
@@ -281,6 +320,78 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
       if (!(await getPage(slug))) return { error: `no page called "${slug}"` }
       await deletePage(slug)
       return { ok: true, deleted: slug }
+    }
+
+    case 'search_web': {
+      if (!isConfigured('search')) return notConfigured('search')
+      const q = String(args.query ?? '').trim()
+      if (!q) return { error: 'query is required' }
+      try { return await webSearch(q) } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'list_connections': {
+      return connectorStatus().map((c) => ({
+        service: c.label,
+        connected: c.configured,
+        can_read: c.reads,
+        can_change: c.writes.length ? c.writes : ['nothing'],
+        needs: c.configured ? null : `${c.missing.join(', ')} — from ${c.where}`,
+      }))
+    }
+
+    case 'github_repos': {
+      if (!isConfigured('github')) return notConfigured('github')
+      try { return await githubRepos() } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'github_activity': {
+      if (!isConfigured('github')) return notConfigured('github')
+      const repo = String(args.repo ?? '').trim()
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return { error: 'repo must look like owner/name' }
+      try { return await githubActivity(repo) } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'vercel_deployments': {
+      if (!isConfigured('vercel')) return notConfigured('vercel')
+      try {
+        return await vercelDeployments(args.project ? String(args.project) : undefined)
+      } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'cloudflare_zones': {
+      if (!isConfigured('cloudflare')) return notConfigured('cloudflare')
+      try { return await cloudflareZones() } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'cloudflare_dns': {
+      if (!isConfigured('cloudflare')) return notConfigured('cloudflare')
+      const zone = String(args.zone_id ?? '').trim()
+      if (!/^[a-f0-9]{16,40}$/i.test(zone)) return { error: 'zone_id looks wrong — get it from cloudflare_zones' }
+      try { return await cloudflareDns(zone) } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'request_infra_change': {
+      const service = String(args.service ?? '').trim()
+      const summary = String(args.summary ?? '').trim()
+      if (!service || !summary) return { error: 'service and summary are required' }
+      // Deliberately a draft, not an action. There is no tool anywhere in this
+      // file that mutates live infrastructure directly.
+      const { error } = await sb.from('agent_drafts').insert({
+        kind: `infra:${service}`,
+        title: summary,
+        content: [
+          `Service: ${service}`,
+          `Change: ${args.detail ?? ''}`,
+          '',
+          `Why: ${args.why ?? ''}`,
+          '',
+          'Nessie cannot apply this. Approving marks it ready for Chris to do.',
+        ].join('\n'),
+        status: 'pending',
+      })
+      return error
+        ? { error: error.message }
+        : { ok: true, queued: summary, note: 'In /hq/approvals. Nothing has changed yet.' }
     }
 
     case 'request_mac_action': {

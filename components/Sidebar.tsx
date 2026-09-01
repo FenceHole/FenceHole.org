@@ -17,6 +17,7 @@ const NAV=[
   {href:'/hq',label:'HQ / AI Agents',icon:'⊕'},
   {href:'/hq/nessie',label:'Nessie',icon:'/nessie-emblem.jpg'},
   {href:'/hq/models',label:"Nessie's Brain",icon:'◈'},
+  {href:'/hub/connections',label:'Connections',icon:'⇄'},
   {href:'/client',label:'Client Portal',icon:'👤'},
   {href:'/account/security',label:'Security',icon:'🔒'},
 ]
