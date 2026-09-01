@@ -34,6 +34,11 @@ export default function NessiePage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<{ name: string; kind: 'text' | 'image'; text?: string; dataUrl?: string }[]>([])
+  // Hands-free back-and-forth: listen, send, speak, listen again.
+  const [convo, setConvo] = useState(false)
+  const [phase, setPhase] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle')
+  const convoRef = useRef(false)
+  useEffect(() => { convoRef.current = convo }, [convo])
   const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
@@ -56,8 +61,22 @@ export default function NessiePage() {
   }, [])
 
   useEffect(() => {
-    if (!lastReply || !voiceOut) return
-    speak(lastReply)
+    if (!lastReply) return
+    if (!voiceOut) {
+      // No speech to wait on, so hand the turn straight back.
+      if (convoRef.current) { setPhase('listening'); startListening(true) }
+      return
+    }
+    setPhase('speaking')
+    // Recognition stays off while she talks, otherwise she hears herself and
+    // answers her own reply.
+    speak(lastReply, {
+      onEnd: () => {
+        if (convoRef.current) { setPhase('listening'); startListening(true) }
+        else setPhase('idle')
+      },
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastReply, voiceOut])
 
   // Keep the newest turn in view — the whole point is reading her latest
@@ -130,11 +149,8 @@ export default function NessiePage() {
     runAsk(task)
   }
 
-  function toggleListening() {
-    if (listening) {
-      recognitionRef.current?.stop()
-      return
-    }
+  /** Start one listening turn. Resolves when speech is captured or it ends. */
+  function startListening(auto: boolean) {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
     stopSpeaking()
@@ -143,21 +159,82 @@ export default function NessiePage() {
     recognition.lang = 'en-US'
     recognition.interimResults = true
     recognition.maxAlternatives = 1
+    let captured = ''
+
     recognition.onresult = (e: any) => {
       let transcript = ''
       for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript
       setTask(transcript)
       if (e.results[e.results.length - 1].isFinal) {
+        captured = transcript
         recognition.stop()
-        runAsk(transcript)
       }
     }
-    recognition.onend = () => setListening(false)
-    recognition.onerror = () => setListening(false)
+
+    recognition.onend = () => {
+      setListening(false)
+      recognitionRef.current = null
+      if (captured.trim()) {
+        setPhase('thinking')
+        runAsk(captured)
+      } else if (auto && convoRef.current) {
+        // Silence, not a sentence — keep the ear open rather than dropping
+        // out of the conversation.
+        setPhase('listening')
+        startListening(true)
+      } else {
+        setPhase('idle')
+      }
+    }
+
+    recognition.onerror = (e: any) => {
+      setListening(false)
+      recognitionRef.current = null
+      // 'no-speech' and 'aborted' are normal in a hands-free loop; anything
+      // else (mic revoked, network) should end it rather than spin.
+      if (auto && convoRef.current && (e?.error === 'no-speech' || e?.error === 'aborted')) {
+        setPhase('listening')
+        startListening(true)
+      } else {
+        if (e?.error && e.error !== 'aborted') setError(`Microphone: ${e.error}`)
+        setPhase('idle')
+        setConvo(false)
+      }
+    }
+
     recognitionRef.current = recognition
     setTask('')
-    recognition.start()
-    setListening(true)
+    try {
+      recognition.start()
+      setListening(true)
+      setPhase('listening')
+    } catch {
+      // start() throws if one is already running; the existing one is fine.
+    }
+  }
+
+  function toggleListening() {
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    startListening(false)
+  }
+
+  function toggleConvo() {
+    if (convo) {
+      setConvo(false)
+      recognitionRef.current?.abort?.()
+      recognitionRef.current = null
+      stopSpeaking()
+      setListening(false)
+      setPhase('idle')
+      return
+    }
+    // Voice replies are the other half of a conversation; turn them on with it.
+    setVoiceOut(true)
+    setConvo(true)
+    startListening(true)
   }
 
   return (
@@ -208,6 +285,21 @@ export default function NessiePage() {
             </button>
           )}
 
+          {voiceSupported && (
+            <button
+              type="button"
+              onClick={toggleConvo}
+              className={`rounded-lg border px-3 py-2 text-xs font-semibold ${convo ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-300' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-amber-400/30'}`}
+              title="Hands-free — she listens, answers, then listens again"
+            >
+              {convo ? '● Conversation on' : '◌ Conversation'}
+            </button>
+          )}
+          {convo && (
+            <span className="text-[11px] text-white/50">
+              {phase === 'listening' ? 'listening…' : phase === 'thinking' ? 'thinking…' : phase === 'speaking' ? 'speaking…' : ''}
+            </span>
+          )}
           <input
             ref={fileRef}
             type="file"
