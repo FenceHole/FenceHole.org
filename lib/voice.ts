@@ -137,3 +137,68 @@ export function stopSpeaking() {
     window.speechSynthesis.cancel()
   }
 }
+
+
+// --- Neural voice ------------------------------------------------------
+//
+// Browser synthesis is the fallback, not the goal. When a TTS engine is
+// configured server-side this plays real generated audio instead; when it
+// isn't, the 503 sends us back to the browser voice rather than silence.
+
+let currentAudio: HTMLAudioElement | null = null
+// Remembered per session: once we know there's no engine, stop asking on
+// every single reply.
+let neuralAvailable: boolean | null = null
+
+export function stopAudio() {
+  if (currentAudio) {
+    currentAudio.pause()
+    currentAudio.src = ''
+    currentAudio = null
+  }
+}
+
+export function hasNeuralVoice(): boolean | null {
+  return neuralAvailable
+}
+
+/**
+ * Speak with the best available voice. Tries the neural engine, falls back to
+ * the browser. `onEnd` fires either way, so a conversation loop can rely on it.
+ */
+export async function speakBest(text: string, opts: SpeakOptions = {}): Promise<void> {
+  const clean = speakable(text)
+  if (!clean) { opts.onEnd?.(); return }
+
+  stopSpeaking()
+  stopAudio()
+
+  if (neuralAvailable !== false) {
+    try {
+      const res = await fetch('/api/hq/nessie/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: clean }),
+      })
+
+      if (res.ok) {
+        neuralAvailable = true
+        const url = URL.createObjectURL(await res.blob())
+        const audio = new Audio(url)
+        currentAudio = audio
+        audio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; opts.onEnd?.() }
+        audio.onerror = () => { URL.revokeObjectURL(url); currentAudio = null; speak(clean, opts) }
+        await audio.play()
+        return
+      }
+
+      // 503 means no engine is configured — that answer won't change this
+      // session, so stop asking and use the browser from here on.
+      if (res.status === 503) neuralAvailable = false
+    } catch {
+      // Network trouble; fall through to the browser voice.
+    }
+  }
+
+  speak(clean, opts)
+}

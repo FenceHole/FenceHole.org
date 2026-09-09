@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { speak, stopSpeaking, pickVoice, listVoices, setVoice } from '@/lib/voice'
+import { speak, speakBest, stopSpeaking, stopAudio, pickVoice, listVoices, setVoice } from '@/lib/voice'
 
 const TIER_LABEL: Record<string, string> = {
   simple: 'Hermes · voice',
@@ -70,7 +70,7 @@ export default function NessiePage() {
     setPhase('speaking')
     // Recognition stays off while she talks, otherwise she hears herself and
     // answers her own reply.
-    speak(lastReply, {
+    speakBest(lastReply, {
       onEnd: () => {
         if (convoRef.current) { setPhase('listening'); startListening(true) }
         else setPhase('idle')
@@ -154,6 +154,7 @@ export default function NessiePage() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
     stopSpeaking()
+    stopAudio()
 
     const recognition = new SR()
     recognition.lang = 'en-US'

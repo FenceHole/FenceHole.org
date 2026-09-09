@@ -64,6 +64,15 @@ export const CONNECTORS: Connector[] = [
     where: 'tavily.com or brave.com/search/api — both have free tiers',
   },
   {
+    key: 'voice',
+    label: 'Nessie\'s voice (neural TTS)',
+    env: ['ELEVENLABS_API_KEY'],
+    reads: [],
+    writes: ['speak her replies in a real voice instead of browser synthesis'],
+    where:
+      'elevenlabs.io — free tier covers ~10k characters a month. OPENAI_API_KEY also works as an alternative.',
+  },
+  {
     key: 'google',
     label: 'Google Workspace',
     env: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
@@ -76,14 +85,16 @@ export const CONNECTORS: Connector[] = [
 export function isConfigured(key: string): boolean {
   const c = CONNECTORS.find((x) => x.key === key)
   if (!c) return false
+  // Voice takes either engine, so it's satisfied by either key rather than all.
+  if (key === 'voice') return Boolean(process.env.ELEVENLABS_API_KEY || process.env.OPENAI_API_KEY)
   return c.env.every((e) => Boolean(process.env[e]))
 }
 
 export function connectorStatus() {
   return CONNECTORS.map((c) => ({
     ...c,
-    configured: c.env.every((e) => Boolean(process.env[e])),
-    missing: c.env.filter((e) => !process.env[e]),
+    configured: isConfigured(c.key),
+    missing: isConfigured(c.key) ? [] : c.env.filter((e) => !process.env[e]),
   }))
 }
 
