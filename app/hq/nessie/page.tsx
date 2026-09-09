@@ -31,7 +31,7 @@ export default function NessiePage() {
   const [voiceOut, setVoiceOut] = useState(true)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [voiceName, setVoiceName] = useState<string>('')
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const threadTopRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<{ name: string; kind: 'text' | 'image'; text?: string; dataUrl?: string }[]>([])
   // Hands-free back-and-forth: listen, send, speak, listen again.
@@ -79,10 +79,10 @@ export default function NessiePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastReply, voiceOut])
 
-  // Keep the newest turn in view — the whole point is reading her latest
-  // reply without hunting for it.
+  // Newest-first, so her latest reply sits directly under the input box and
+  // the page never grows downward away from what you want to read.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    threadTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [turns, loading])
 
   const TEXT_EXT = /\.(md|markdown|txt|csv|json|ya?ml|ts|tsx|js|jsx|py|html|css|sql|log)$/i
@@ -376,13 +376,18 @@ export default function NessiePage() {
               Add OPENROUTER_API_KEY in Vercel → Project → Settings → Environment Variables, then redeploy.
             </p>
           )}
-          <div ref={bottomRef} />
         </div>
       )}
 
-      {turns.length > 0 && (
+      {(turns.length > 0 || loading) && (
         <div className="flex flex-col gap-4">
-          {turns.map((t, i) =>
+          <div ref={threadTopRef} />
+          {loading && (
+            <div className="self-start rounded-xl border border-amber-400/15 bg-amber-400/[0.03] px-4 py-2.5">
+              <p className="text-[11px] text-amber-200/60">Nessie is working…</p>
+            </div>
+          )}
+          {turns.map((t, i) => ({ t, key: i })).reverse().map(({ t, key: i }) =>
             t.role === 'you' ? (
               <div key={i} className="self-end max-w-[85%] rounded-xl border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2.5">
                 <p className="text-[10px] tracking-widest text-sky-300/70 mb-1">YOU</p>
