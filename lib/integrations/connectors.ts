@@ -73,6 +73,16 @@ export const CONNECTORS: Connector[] = [
       'elevenlabs.io — free tier covers ~10k characters a month. OPENAI_API_KEY also works as an alternative.',
   },
   {
+    key: 'plaud',
+    label: 'Plaud (transcription)',
+    env: ['PLAUD_API_BASE', 'PLAUD_CLIENT_ID', 'PLAUD_API_KEY'],
+    reads: ['transcribe audio through Plaud\'s ASR, with speaker labels'],
+    writes: [],
+    where:
+      'docs.plaud.ai — the api key is under App Settings > API Keys in the developer portal, ' +
+      'NOT the client secret. PLAUD_API_BASE is the API base URL from those docs.',
+  },
+  {
     key: 'google',
     label: 'Google Workspace',
     env: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
