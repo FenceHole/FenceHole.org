@@ -73,14 +73,14 @@ export const CONNECTORS: Connector[] = [
       'elevenlabs.io — free tier covers ~10k characters a month. OPENAI_API_KEY also works as an alternative.',
   },
   {
-    key: 'plaud',
-    label: 'Plaud (transcription)',
-    env: ['PLAUD_API_BASE', 'PLAUD_CLIENT_ID', 'PLAUD_API_KEY'],
-    reads: ['transcribe audio through Plaud\'s ASR, with speaker labels'],
-    writes: [],
+    key: 'mcp',
+    label: 'MCP servers',
+    env: ['MCP_SERVERS'],
+    reads: ['whatever tools each connected server exposes — Plaud, and anything else speaking MCP'],
+    writes: ['depends on the server; anything outward-facing still goes through approvals'],
     where:
-      'docs.plaud.ai — the api key is under App Settings > API Keys in the developer portal, ' +
-      'NOT the client secret. PLAUD_API_BASE is the API base URL from those docs.',
+      'One JSON array in Vercel: [{"name":"plaud","url":"https://...","headers":{"Authorization":"Bearer ..."}}]. ' +
+      'Adding a server is a settings change, not a code change.',
   },
   {
     key: 'google',

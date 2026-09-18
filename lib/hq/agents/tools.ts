@@ -9,6 +9,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { listPages, getPage, savePage, deletePage, toSlug, DATA_SOURCES, type Panel } from '@/lib/hub/modules'
+import { configuredServers, findServer, MCPClient } from '@/lib/integrations/mcp'
 import {
   isConfigured, notConfigured, connectorStatus,
   githubRepos, githubActivity, vercelDeployments,
@@ -90,6 +91,19 @@ export const NESSIE_TOOLS: ToolDef[] = [
   ),
   tool('list_hub_pages', 'The pages you have built, with their panels.', {}),
   tool('delete_hub_page', 'Remove a page you built.', { slug: str('Its slug.') }, ['slug']),
+
+  tool('mcp_servers', 'Outside services reachable over MCP. Each brings its own tools — check ' +
+    'here before assuming you cannot reach something.', {}),
+  tool('mcp_tools', 'What one MCP server can actually do. Call this before mcp_call so you use ' +
+    'the right tool name and arguments.', {
+    server: str('Server name from mcp_servers.'),
+  }, ['server']),
+  tool('mcp_call', 'Run a tool on an MCP server. Reading is fine to do freely; if a tool would ' +
+    'change something outside the Hub, queue it for approval instead of calling it.', {
+    server: str('Server name from mcp_servers.'),
+    tool: str('Tool name from mcp_tools.'),
+    args: { type: 'object', description: "The tool's arguments, matching its input schema." },
+  }, ['server', 'tool']),
 
   tool('search_web', 'Search the open web. Use it for research, checking a claim, or ' +
     'looking up what changed in a tool — not for anything you already know.', {
@@ -320,6 +334,39 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
       if (!(await getPage(slug))) return { error: `no page called "${slug}"` }
       await deletePage(slug)
       return { ok: true, deleted: slug }
+    }
+
+    case 'mcp_servers': {
+      const servers = configuredServers()
+      if (servers.length === 0) {
+        return {
+          servers: [],
+          note: 'No MCP servers configured. They are set as one MCP_SERVERS variable in Vercel: ' +
+            'a JSON array of {name, url, headers}.',
+        }
+      }
+      return servers.map((srv) => ({ name: srv.name, url: srv.url }))
+    }
+
+    case 'mcp_tools': {
+      const server = findServer(String(args.server ?? ''))
+      if (!server) return { error: `No MCP server called "${args.server}". Try mcp_servers.` }
+      try {
+        return await new MCPClient(server).listTools()
+      } catch (e) { return { error: String(e).slice(0, 300) } }
+    }
+
+    case 'mcp_call': {
+      const server = findServer(String(args.server ?? ''))
+      if (!server) return { error: `No MCP server called "${args.server}". Try mcp_servers.` }
+      const toolName = String(args.tool ?? '').trim()
+      if (!toolName) return { error: 'tool is required' }
+      const callArgs = typeof args.args === 'object' && args.args !== null
+        ? (args.args as Record<string, unknown>)
+        : {}
+      try {
+        return await new MCPClient(server).callTool(toolName, callArgs)
+      } catch (e) { return { error: String(e).slice(0, 400) } }
     }
 
     case 'search_web': {
