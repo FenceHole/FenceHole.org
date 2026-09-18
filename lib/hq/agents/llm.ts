@@ -48,6 +48,15 @@ export const FALLBACK_CHAIN = [
   // Verified against this account rather than assumed; deepseek/deepseek-chat
   // was in this list and had itself become unreachable.
   'meta-llama/llama-3.3-70b-instruct',
+  // Then out from under OpenRouter altogether. These only enter the chain when
+  // their key is set, and they are last on purpose: one OpenRouter key covers
+  // everything, so prefer it while it works. They exist so that a catalogue
+  // change cannot leave her mute — which is what happened on 2026-09-17, when
+  // hermes-4-70b and llama-3.3-70b-instruct both 404'd in the same request and
+  // there was nothing reachable left to fall back to.
+  'direct/deepseek',
+  'direct/nebius',
+  'direct/grok',
 ].filter(Boolean) as string[]
 
 /** 402 = no credits, 404 = unknown id or a provider the account disallows. */
@@ -112,31 +121,94 @@ export interface LLMResult {
   usage?: LLMUsage
 }
 
+// --- Direct providers -------------------------------------------------------
+// Every outage so far has had the same shape: a slug this account could reach
+// gets re-pointed at a provider it can't, and the tier dies with a 404 that
+// looks like a typo. Adding another OpenRouter slug to the chain only buys time
+// until the next re-point, because they all sit behind the same policy layer.
+//
+// So: when a maker's own API key is present, go straight to them. No catalogue,
+// no allowed-providers filter, nothing that can be re-pointed out from under
+// us. These are the escape hatch, and they belong at the END of the chain —
+// OpenRouter first while it works, because one key there covers everything.
+//
+// All three speak the OpenAI chat format, so only the URL and the model name
+// change. Model names are env-overridable because a maker renaming their own
+// model should be a config edit, not a deploy.
+const DIRECT_PROVIDERS: Record<
+  string,
+  { url: string; keyEnv: string; model: string }
+> = {
+  'direct/deepseek': {
+    url: 'https://api.deepseek.com/v1/chat/completions',
+    keyEnv: 'DEEPSEEK_API_KEY',
+    model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+  },
+  'direct/grok': {
+    url: 'https://api.x.ai/v1/chat/completions',
+    keyEnv: 'XAI_API_KEY',
+    model: process.env.XAI_MODEL || 'grok-4.6',
+  },
+  'direct/nebius': {
+    // Nebius is who serves Hermes on OpenRouter anyway, so going direct keeps
+    // the Hermes voice without the policy layer in front of it.
+    url: 'https://api.studio.nebius.com/v1/chat/completions',
+    keyEnv: 'NEBIUS_API_KEY',
+    model: process.env.NEBIUS_MODEL || 'NousResearch/Hermes-4-405B',
+  },
+}
+
+/** A direct provider is only usable if its key is actually set. */
+export function directProviderReady(id: string): boolean {
+  const p = DIRECT_PROVIDERS[id]
+  return Boolean(p && process.env[p.keyEnv])
+}
+
 async function postChat(model: string, systemPrompt: string, userPrompt: string) {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ]
+
+  const direct = DIRECT_PROVIDERS[model]
+  if (direct) {
+    const key = process.env[direct.keyEnv]
+    if (!key) {
+      // Reported as a 404 so withFallback treats it as an availability problem
+      // and moves on, rather than aborting the whole chain.
+      return new Response(
+        JSON.stringify({ error: { message: `${direct.keyEnv} is not set` } }),
+        { status: 404 }
+      )
+    }
+    return fetch(direct.url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: direct.model, messages }),
+    })
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
     throw new Error(
       'OPENROUTER_API_KEY is not configured — Nessie has no brain connected. ' +
-      'Add it in Vercel under Settings > Environment Variables (Production).'
+      'Add it in Vercel under Settings > Environment Variables (Production). ' +
+      'Or set DEEPSEEK_API_KEY, XAI_API_KEY or NEBIUS_API_KEY to skip ' +
+      'OpenRouter entirely.'
     )
   }
 
-  const res = await fetch(OPENROUTER_URL, {
+  return fetch(OPENROUTER_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    }),
+    body: JSON.stringify({ model, messages }),
   })
-
-  return res
 }
 
 export async function callOpenRouter(

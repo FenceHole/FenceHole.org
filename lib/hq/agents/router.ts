@@ -30,6 +30,16 @@ export interface ModelChoice {
 //   nousresearch/hermes-4-70b          ok, 879ms (nebius)
 //   meta-llama/llama-3.3-70b-instruct  ok, 519ms (meta)
 // Re-measure on /hq/models before changing either.
+//
+// 2026-09-17: BOTH of the above then 404'd in the same request — the whole
+// fallback chain was exhausted. Same mechanism as the note above, third
+// occurrence. Measuring a slug tells you it works today, not that it will
+// tomorrow, so the fix is no longer a better slug:
+//   1. Widen the allowed-providers list at openrouter.ai/settings/privacy.
+//      That is the actual cause and takes under a minute.
+//   2. Set DEEPSEEK_API_KEY / NEBIUS_API_KEY / XAI_API_KEY. llm.ts now falls
+//      through to those makers directly, where there is no policy layer and
+//      no slug to re-point. A catalogue change can no longer silence her.
 const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
 const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'meta-llama/llama-3.3-70b-instruct'
 const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'meta-llama/llama-3.3-70b-instruct'
