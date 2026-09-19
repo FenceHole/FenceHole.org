@@ -14,7 +14,7 @@ import { NESSIE_TOOLS, runTool } from './tools'
 import { NESSIE_SYSTEM_PROMPT } from './nessie'
 import { classifyTask } from './router'
 import { recallMemory, remember, logMessage, getConversationHistory } from './memory'
-import { resolveModel } from './settings'
+import { resolveModel, getModelOverrides, clearModelOverride } from './settings'
 
 const MAX_STEPS = 6
 export const AGENT_ID = 'nessie-chief-of-staff'
@@ -108,7 +108,24 @@ export async function runNessie(input: string, opts: RunOptions = {}): Promise<N
 
   if (log) await logMessage(AGENT_ID, channel, externalId, 'user', input).catch(() => {})
 
+  /**
+   * A stored override that no longer resolves is worse than no override: it
+   * costs a failed request every single time before the chain rescues it. If
+   * the answer came back on a different model than the one this tier asked
+   * for, the override is dead — drop it.
+   */
+  const retireDeadOverride = async (usedModel: string) => {
+    if (usedModel === model) return
+    try {
+      const overrides = await getModelOverrides()
+      if (overrides[tier] && overrides[tier] === model) await clearModelOverride(tier)
+    } catch {
+      // Self-healing is a nicety; never let it break a reply.
+    }
+  }
+
   const finish = async (reply: string, trace: TraceEntry[], usedModel: string, steps: number) => {
+    await retireDeadOverride(usedModel)
     const { reply: clean, remembered } = await captureMemory(reply, `${channel}-note`)
     if (log) await logMessage(AGENT_ID, channel, externalId, 'assistant', clean).catch(() => {})
     return { reply: clean, trace, model: usedModel, steps, remembered }
