@@ -21,24 +21,30 @@ export interface ModelChoice {
 // setting also has to permit whoever serves it.
 //
 // NOTE: this account restricts OpenRouter to an allowed-providers list, and
-// OpenRouter re-points slugs at new provider variants without warning —
-// deepseek-chat became deepseek-chat-v3 (streamlake/deepinfra) and qwen3-8b
-// became qwen3-8b-04-28 (alibaba), neither permitted. That is why every tier
-// died at once with no code change.
+// OpenRouter re-points slugs at new provider variants without warning. Pinned
+// model ids have now died out from under us four times — qwen3-8b, then
+// deepseek-chat, then llama-3.3-70b and hermes-4-70b together — each time
+// taking every tier offline at once with no code change.
 //
-// Both defaults below were measured against this account, not guessed:
-//   nousresearch/hermes-4-70b          ok, 879ms (nebius)
-//   meta-llama/llama-3.3-70b-instruct  ok, 519ms (meta)
-// Re-measure on /hq/models before changing either.
-const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'nousresearch/hermes-4-70b'
-const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'meta-llama/llama-3.3-70b-instruct'
-const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'meta-llama/llama-3.3-70b-instruct'
+// Measured against this account on 2026-09-19:
+//   anthropic/claude-haiku-4.5   ok, 462ms
+//   google/gemini-2.5-flash      ok, 512ms
+//   google/gemini-3.8-flash      ok, but 16s
+//   openrouter/auto              ok, 1.1s — resolves to whatever is allowed
+//
+// The durable protection is not a better pin, it is the fallback chain in
+// llm.ts ending at openrouter/auto, which cannot 404 because OpenRouter picks
+// from what this account can actually reach. Re-measure on /hq/models before
+// changing anything here.
+const VOICE_MODEL = process.env.NESSIE_MODEL_VOICE || 'google/gemini-2.5-flash'
+const HARNESS_MODEL = process.env.NESSIE_MODEL_HARNESS || 'anthropic/claude-haiku-4.5'
+const WORKER_MODEL = process.env.NESSIE_MODEL_WORKER || 'google/gemini-2.5-flash'
 
 export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Quick path — small talk and one-liners go straight to the voice layer.
   simple: {
     id: VOICE_MODEL,
-    label: 'Hermes (voice)',
+    label: 'Gemini 2.5 Flash (voice)',
     role: 'voice',
     tier: 'simple',
     approxCostPer1kTokens: 0.0004,
@@ -46,7 +52,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Standard path — the worker model handles triage and drafting.
   standard: {
     id: WORKER_MODEL,
-    label: 'Llama 3.3 70B (worker)',
+    label: 'Gemini 2.5 Flash (worker)',
     role: 'worker',
     tier: 'standard',
     approxCostPer1kTokens: 0.0001,
@@ -54,7 +60,7 @@ export const MODEL_TIERS: Record<TaskComplexity, ModelChoice> = {
   // Full path — anything carrying a judgment goes through the harness.
   complex: {
     id: HARNESS_MODEL,
-    label: 'Llama 3.3 70B (harness)',
+    label: 'Claude Haiku 4.5 (harness)',
     role: 'harness',
     tier: 'complex',
     approxCostPer1kTokens: 0.0022,

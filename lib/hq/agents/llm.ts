@@ -45,9 +45,12 @@ export function explainOpenRouterError(status: number, body: string): string {
 // different model, so a request walks this list before giving up.
 export const FALLBACK_CHAIN = [
   process.env.NESSIE_MODEL_FALLBACK,
-  // Verified against this account rather than assumed; deepseek/deepseek-chat
-  // was in this list and had itself become unreachable.
-  'meta-llama/llama-3.3-70b-instruct',
+  'anthropic/claude-haiku-4.5',
+  // Last resort, and the one that matters: openrouter/auto asks OpenRouter to
+  // pick from whatever this account can actually reach. A pinned id can stop
+  // existing — that has happened four times — but auto cannot 404, so a
+  // catalogue change can no longer take Nessie fully offline.
+  'openrouter/auto',
 ].filter(Boolean) as string[]
 
 /** 402 = no credits, 404 = unknown id or a provider the account disallows. */

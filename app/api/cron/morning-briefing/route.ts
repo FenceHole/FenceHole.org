@@ -39,6 +39,36 @@ export async function GET(req: NextRequest) {
     for (const [tier, model] of targets) {
       const started = Date.now()
       try {
+        // ?tools=1 also checks the model actually emits tool_calls — a model
+        // that chats fine but can't call tools is useless for the working
+        // tiers, and that distinction has cost us a week before.
+        if (new URL(req.url).searchParams.get('tools')) {
+          const { chatWithTools } = await import('@/lib/hq/agents/llm')
+          const probeTool = [{
+            type: 'function',
+            function: {
+              name: 'list_deals',
+              description: 'List brand deal offers awaiting a decision.',
+              parameters: { type: 'object', properties: {}, required: [] },
+            },
+          }]
+          const { message, model: got } = await chatWithTools(
+            model,
+            [
+              { role: 'system', content: 'You have tools. Use them rather than guessing.' },
+              { role: 'user', content: 'Which brand deals need my attention?' },
+            ],
+            probeTool
+          )
+          const calls = message.tool_calls ?? []
+          out[tier] = {
+            model, answered_as: got,
+            supports_tools: calls.length > 0,
+            called: calls.map((c) => c.function.name),
+            ms: Date.now() - started,
+          }
+          continue
+        }
         const r = await callOpenRouter(model, 'Reply with the single word: ok', 'ping')
         out[tier] = { model, answered_as: r.model, reply: r.content.slice(0, 40), ms: Date.now() - started }
       } catch (err) {
